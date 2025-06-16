@@ -36,6 +36,16 @@
 *.x86_64
 *.hex
 
+
+# Yacc debug output
+*.output
+
+# Yacc
+parser.tab.*
+
+# Lex
+lex.yy.*
+
 # Debug files
 *.dSYM/
 *.su
