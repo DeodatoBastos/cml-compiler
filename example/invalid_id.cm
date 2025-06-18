@@ -2,6 +2,7 @@
 
 void main(void)
 {
-    int x1 = 1; /* numbers are not allowed in id name */
+    int x1; /* numbers are not allowed in id name */
+    x1 = 1;
     output(x1);
 }
