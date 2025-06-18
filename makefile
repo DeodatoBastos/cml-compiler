@@ -30,9 +30,11 @@ $(BISON_C) $(BISON_H): $(BISON_SRC)
 $(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
 	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(LEX_C) $(BISON_C) -lfl
 
-# Run the program with a single file
-run-file: $(OUTPUT)
-	@read -p "Enter input file path: " file; \
+# Run the program with a single file from the "example" directory
+test-file: $(OUTPUT)
+	@indir="example"; \
+	read -p "Enter filename (in '$$indir'): " filename; \
+	file="$$indir/$$filename"; \
 	if [ -f "$$file" ]; then \
 		echo "=== Running: ./$(OUTPUT) $(ARGS) $$file ==="; \
 		./$(OUTPUT) $(ARGS) "$$file"; \
@@ -40,18 +42,51 @@ run-file: $(OUTPUT)
 		echo "File not found: $$file"; \
 	fi
 
-# Run the program on all files in a directory
-run-dir: $(OUTPUT)
-	@read -p "Enter directory path: " dir; \
-	if [ -d "$$dir" ]; then \
-		for f in "$$dir"/*.c "$$dir"/*.cm; do \
+# Run the program with a single file chosen from the "example" directory
+run-file: $(OUTPUT)
+	@indir="example"; \
+	i=0; \
+	for f in "$$indir"/*.c "$$indir"/*.cm; do \
+		[ -f "$$f" ] || continue; \
+		echo "[$$i] $$f"; \
+		eval "file_$$i='$$f'"; \
+		i=$$((i+1)); \
+	done; \
+	if [ "$$i" -eq 0 ]; then \
+		echo "No .c or .cm files found in $$indir."; \
+		exit 1; \
+	fi; \
+	read -p "Enter the number of the file to run: " idx; \
+	eval "selected=\$$file_$$idx"; \
+	if [ -n "$$selected" ]; then \
+		echo "=== Running: ./$(OUTPUT) $(ARGS) $$selected ==="; \
+		./$(OUTPUT) $(ARGS) "$$selected"; \
+	else \
+		echo "Invalid selection."; \
+		exit 1; \
+	fi
+
+# Run the program on all files in the "example" directory, optionally saving output
+test: $(OUTPUT)
+	@indir="example"; \
+	outdir="results"; \
+	if [ -d "$$indir" ]; then \
+		if [ "$(SAVE)" = "1" ]; then mkdir -p "$$outdir"; fi; \
+		for f in "$$indir"/*.c "$$indir"/*.cm; do \
 			if [ -f "$$f" ]; then \
-				echo "=== Running: ./$(OUTPUT) $(ARGS) $$f ==="; \
-				./$(OUTPUT) $(ARGS) "$$f"; \
+				basefile=$$(basename "$$f"); \
+				if [ "$(SAVE)" = "1" ]; then \
+					outfile="$$outdir/$${basefile%.*}.txt"; \
+					echo "=== Saving: ./$(OUTPUT) $(ARGS) $$f > $$outfile ==="; \
+					./$(OUTPUT) $(ARGS) "$$f" > "$$outfile"; \
+				else \
+					echo "=== Running: ./$(OUTPUT) $(ARGS) $$f ==="; \
+					./$(OUTPUT) $(ARGS) "$$f"; \
+				fi; \
 			fi; \
 		done \
 	else \
-		echo "Directory not found: $$dir"; \
+		echo "Directory not found: $$indir"; \
 	fi
 
 # Clean build files

@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     }
 
     listing = stdout;
-    fprintf(listing, "\nC- COMPILATION: %s\n", argv[1]);
+    fprintf(listing, "C- COMPILATION: %s\n", argv[1]);
 
     ASTNode *syntaxTree;
     syntaxTree = parse();
