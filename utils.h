@@ -1,8 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-ASTNode *new_node(NodeType type, ASTNode *left, ASTNode *right, const char *name);
-ASTNode *new_id(const char *name);
+ASTNode *new_node(NodeType node_type, const char *name);
 ASTNode *new_num(int val);
 void print_tree(ASTNode *node, int depth);
 void free_ast(ASTNode *node);

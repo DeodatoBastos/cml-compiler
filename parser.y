@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include "ast.h"
 #include "global.h"
 #include "utils.h"
@@ -26,6 +27,7 @@ static ASTNode *root;
     int ival;
     char* sval;
     ASTNode* node;
+    TokenType tval;
 }
 
 %define parse.trace
@@ -34,30 +36,33 @@ static ASTNode *root;
 %left MUL DIV MOD
 %left ADD SUB
 
-%token WRITE READ INT VOID WHILE IF ELSE RETURN
+%token WRITE READ WHILE IF ELSE RETURN
 %token <ival> NUM
+%token INT VOID
 %token <sval> ID INCLUDE
-%token <sval> LE GE EQ NE GT LT
-%token <sval> ADD SUB MUL DIV MOD
+%token LE GE EQ NE GT LT
+%token ADD SUB MUL DIV MOD
 %token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK SEMICOLON COMMA ASSIGN
 %token ERROR
 
 %type  <node> program headers decl_list decl var_decl func_decl type_spec compound_stmt params param_list
 %type  <node> param local_decl stmt_list stmt expr_stmt sel_stmt iter_stmt return_stmt read_stmt write_stmt
-%type  <node> expr var simple_expr add_expr relop addop term mulop factor func_call args arg_list
-
+%type  <node> expr var simple_expr add_expr term factor func_call args arg_list
+%type  <tval> relop addop mulop
 
 %%
 
 program: headers decl_list {
-            $$ = new_node(NODE_PROGRAM, $1, $2, NULL);
+            $$ = new_node(NODE_PROGRAM, NULL);
+            $$->child[0] = $1;
+            $$->child[1] = $2;
             root = $$;
        }
 ;
 
 headers: headers INCLUDE {
-       ASTNode *headerNode = new_id($2);
-        $$ = new_node(NODE_HEADER, $1, headerNode, NULL);
+            $$ = new_node(NODE_HEADER, $2);
+            $$->child[0] = $1;
        }
        | /* empty */ {
             $$ = NULL;
@@ -65,50 +70,52 @@ headers: headers INCLUDE {
 ;
 
 decl_list: decl_list decl {
-            $$ = new_node(NODE_DECL_LIST, $1, $2, NULL);
+            $$ = new_node(NODE_DECL_LIST, NULL);
+            $$->child[0] = $1;
+            $$->child[1] = $2;
          }
          | decl {
-            $$ = new_node(NODE_DECL_LIST, $1, NULL, NULL);
+            $$ = new_node(NODE_DECL_LIST, NULL);
+            $$->child[0] = $1;
          }
 ;
 
 decl: var_decl {
-      $$ = new_node(NODE_DECL, $1, NULL, NULL);
+      $$ = new_node(NODE_DECL, NULL);
+      $$->child[0] = $1;
     }
     | func_decl {
-      $$ = new_node(NODE_DECL, $1, NULL, NULL);
+      $$ = new_node(NODE_DECL, NULL);
+      $$->child[0] = $1;
     }
 ;
 
 var_decl: type_spec ID SEMICOLON {
-            ASTNode *idNode = new_id($2);
-            $$ = new_node(NODE_VAR_DECL, $1, idNode, NULL);
+            $$ = new_node(NODE_VAR_DECL, $2);
+            $$->child[0] = $1;
         }
         | type_spec ID LBRACK NUM RBRACK SEMICOLON {
-            ASTNode *idNode = new_id($2);
-            ASTNode *numNode = new_num($4);
-            ASTNode *arraySizeNode = new_node(NODE_NUM, NULL, NULL, NULL);
-            arraySizeNode->value = numNode->value;
-            ASTNode *varNode = new_node(NODE_VAR_DECL, $1, idNode, NULL);
-
-            ASTNode *arrayNode = new_node(NODE_VAR_DECL, idNode, numNode, NULL);
-            $$ = new_node(NODE_VAR_DECL, $1, arrayNode, NULL);
+            $$ = new_node(NODE_ARR_DECL, $2);
+            $$->child[0] = $1;
+            $$->child[1] = new_num($4);
         }
 ;
 
 type_spec: INT {
-            $$ = new_node(NODE_TYPE, NULL, NULL, "int");
+            $$ = new_node(NODE_TYPE, "int");
+            $$->type = Integer;
          }
          | VOID {
-            $$ = new_node(NODE_TYPE, NULL, NULL, "void");
+            $$ = new_node(NODE_TYPE, "void");
+            $$->type = Void;
          }
 ;
 
 func_decl: type_spec ID LPAREN params RPAREN compound_stmt {
-            ASTNode *idNode = new_id($2);
-            ASTNode *funcNode = new_node(NODE_FUNC_DECL, idNode, $4, NULL);
-            $$ = new_node(NODE_FUNC_DECL, $1, funcNode, NULL);
-            funcNode->right = $6;
+            $$ = new_node(NODE_FUNC_DECL, $2);
+            $$->child[0] = $1;
+            $$->child[1] = $4;
+            $$->child[2] = $6;
          }
 ;
 
@@ -117,32 +124,37 @@ params: param_list { $$ = $1; }
 ;
 
 param_list: param_list COMMA param {
-            $$ = new_node(NODE_PARAM_LIST, $1, $3, NULL);
+            $$ = new_node(NODE_PARAM_LIST, NULL);
+            $$->child[0] = $1;
+            $$->child[1] = $3;
           }
           | param {
-            $$ = new_node(NODE_PARAM_LIST, $1, NULL, NULL);
+            $$ = new_node(NODE_PARAM_LIST, NULL);
+            $$->child[0] = $1;
           }
 ;
 
 param: type_spec ID {
-        ASTNode *idNode = new_id($2);
-        $$ = new_node(NODE_PARAM, $1, idNode, NULL);
+        $$ = new_node(NODE_PARAM, $2);
+        $$->child[0] = $1;
      }
      | type_spec ID LBRACK RBRACK {
-            ASTNode *idNode = new_id($2);
-            ASTNode *arrayNode = new_node(NODE_PARAM, idNode, NULL, "array");
-            $$ = new_node(NODE_PARAM, $1, arrayNode, NULL);
+        $$ = new_node(NODE_PARAM_ARR, $2);
+        $$->child[0] = $1;
      }
 ;
 
 compound_stmt: LBRACE local_decl stmt_list RBRACE {
-                ASTNode *compound = new_node(NODE_COMPOUND, $2, $3, NULL);
-                $$ = compound;
+                $$ = new_node(NODE_COMPOUND, NULL);
+                $$->child[0] = $2;
+                $$->child[1] = $3;
              }
 ;
 
 local_decl: local_decl var_decl {
-            $$ = new_node(NODE_LOCAL_DECL, $1, $2, NULL);
+            $$ = new_node(NODE_LOCAL_DECL, NULL);
+            $$->child[0] = $1;
+            $$->child[1] = $2;
           }
           | /* empty */ {
             $$ = NULL;
@@ -150,7 +162,9 @@ local_decl: local_decl var_decl {
 ;
 
 stmt_list: stmt_list stmt {
-            $$ = new_node(NODE_STMT_LIST, $1, $2, NULL);
+            $$ = new_node(NODE_STMT_LIST, NULL);
+            $$->child[0] = $1;
+            $$->child[1] = $2;
          }
          | /* empty */ {
             $$ = NULL;
@@ -168,7 +182,8 @@ stmt: expr_stmt { $$ = $1; }
 ;
 
 expr_stmt: expr SEMICOLON {
-            $$ = new_node(NODE_EXPR_STMT, $1, NULL, NULL);
+            $$ = new_node(NODE_EXPR_STMT, NULL);
+            $$->child[0] = $1;
          }
          | SEMICOLON {
             $$ = NULL;
@@ -176,39 +191,50 @@ expr_stmt: expr SEMICOLON {
 ;
 
 sel_stmt: IF LPAREN expr RPAREN stmt {
-            $$ = new_node(NODE_SEL_STMT, $3, $5, "if");
+            $$ = new_node(NODE_SEL_STMT, "if");
+            $$->child[0] = $3;
+            $$->child[1] = $5;
         }
         | IF LPAREN expr RPAREN stmt ELSE stmt {
-            ASTNode *ifNode = new_node(NODE_SEL_STMT, $3, $5, "if");
-            $$ = new_node(NODE_SEL_STMT, ifNode, $7, "else");
+            $$ = new_node(NODE_SEL_STMT, "if-else");
+            $$->child[0] = $3;
+            $$->child[1] = $5;
+            $$->child[2] = $7;
         }
 ;
 
 iter_stmt: WHILE LPAREN expr RPAREN stmt {
-            $$ = new_node(NODE_ITER_STMT, $3, $5, NULL);
+            $$ = new_node(NODE_ITER_STMT, "while");
+            $$->child[0] = $3;
+            $$->child[1] = $5;
          }
 ;
 
 return_stmt: RETURN SEMICOLON {
-            $$ = new_node(NODE_RETURN_STMT, NULL, NULL, NULL);
+            $$ = new_node(NODE_RETURN_STMT, NULL);
            }
            | RETURN expr SEMICOLON {
-            $$ = new_node(NODE_RETURN_STMT, $2, NULL, NULL);
+            $$ = new_node(NODE_RETURN_STMT, NULL);
+            $$->child[0] = $2;
            }
 ;
 
 read_stmt: var ASSIGN READ LPAREN RPAREN SEMICOLON {
-            $$ = new_node(NODE_READ, $1, NULL, NULL);
+            $$ = new_node(NODE_READ, NULL);
+            $$->child[0] = $1;
          }
 ;
 
 write_stmt: WRITE LPAREN simple_expr RPAREN SEMICOLON {
-            $$ = new_node(NODE_WRITE, $3, NULL, NULL);
+            $$ = new_node(NODE_WRITE, NULL);
+            $$->child[0] = $3;
           }
 ;
 
 expr: var ASSIGN expr {
-        $$ = new_node(NODE_ASSIGN, $1, $3, "=");
+        $$ = new_node(NODE_ASSIGN, "=");
+        $$->child[0] = $1;
+        $$->child[1] = $3;
     }
     | simple_expr {
         $$ = $1;
@@ -216,56 +242,62 @@ expr: var ASSIGN expr {
 ;
 
 var: ID {
-    $$ = new_id($1);
+    $$ = new_node(NODE_VAR, $1);
    }
    | ID LBRACK expr RBRACK {
-    ASTNode *idNode = new_id($1);
-    $$ = new_node(NODE_VAR, idNode, $3, NULL);
+    $$ = new_node(NODE_ARR, $1);
+    $$->child[0] = $3;
    }
 ;
 
 simple_expr: add_expr relop add_expr {
-            ASTNode *opNode = new_node(NODE_RELOP, $2, NULL, NULL);
-            $$ = new_node(NODE_SIMPLE_EXPR, $1, $3, NULL);
-
-            $$ = new_node(NODE_RELOP, $1, $3, $2->name);
+            $$ = new_node(NODE_RELOP, NULL);
+            $$->attr.op = $2;
+            $$->child[0] = $1;
+            $$->child[1] = $3;
            }
            | add_expr {
             $$ = $1;
            }
 ;
 
-relop: LE { $$ = new_id("<="); }
-     | LT { $$ = new_id("<"); }
-     | GT { $$ = new_id(">"); }
-     | GE { $$ = new_id(">="); }
-     | EQ { $$ = new_id("=="); }
-     | NE { $$ = new_id("!="); }
+relop: LE { $$ = LE; }
+     | LT { $$ = LT; }
+     | GT { $$ = GT; }
+     | GE { $$ = GE; }
+     | EQ { $$ = EQ; }
+     | NE { $$ = NE; }
 ;
 
 add_expr: add_expr addop term {
-            $$ = new_node(NODE_ADD_EXPR, $1, $3, $2->name);
+            $$ = new_node(NODE_ADD_EXPR, NULL);
+            $$->attr.op = $2;
+            $$->child[0] = $1;
+            $$->child[1] = $3;
         }
         | term {
             $$ = $1;
         }
 ;
 
-addop: ADD { $$ = new_id("+"); }
-     | SUB { $$ = new_id("-"); }
+addop: ADD { $$ = ADD; }
+     | SUB { $$ = SUB; }
 ;
 
 term: term mulop factor {
-        $$ = new_node(NODE_TERM, $1, $3, $2->name);
+        $$ = new_node(NODE_TERM, NULL);
+        $$->attr.op = $2;
+        $$->child[0] = $1;
+        $$->child[1] = $3;
     }
     | factor {
         $$ = $1;
     }
 ;
 
-mulop: MUL { $$ = new_id("*"); }
-     | DIV { $$ = new_id("/"); }
-     | MOD { $$ = new_id("%"); }
+mulop: MUL { $$ = MUL; }
+     | DIV { $$ = DIV; }
+     | MOD { $$ = MOD; }
 ;
 
 factor: LPAREN expr RPAREN {
@@ -286,8 +318,8 @@ factor: LPAREN expr RPAREN {
 ;
 
 func_call: ID LPAREN args RPAREN {
-            ASTNode *idNode = new_id($1);
-            $$ = new_node(NODE_CALL, idNode, $3, NULL);
+            $$ = new_node(NODE_CALL, $1);
+            $$->child[0] = $3;
          }
 ;
 
@@ -300,10 +332,13 @@ args: arg_list {
 ;
 
 arg_list: arg_list COMMA expr {
-            $$ = new_node(NODE_ARG_LIST, $1, $3, NULL);
+            $$ = new_node(NODE_ARG_LIST, NULL);
+            $$->child[0] = $1;
+            $$->child[1] = $3;
         }
         | expr {
-            $$ = new_node(NODE_ARG_LIST, $1, NULL, NULL);
+            $$ = new_node(NODE_ARG_LIST, NULL);
+            $$->child[0] = $1;
         }
 ;
 

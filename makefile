@@ -14,7 +14,7 @@ BISON_H=parser.tab.h
 OUTPUT=frontend.out
 
 # Optional flags passed via ARGS
-ARGS ?=
+ARGS=--ts --tp
 
 # Default rule
 all: $(OUTPUT)

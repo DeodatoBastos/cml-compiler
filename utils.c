@@ -4,23 +4,23 @@
 #include "global.h"
 #include "utils.h"
 
-ASTNode *new_node(NodeType type, ASTNode *left, ASTNode *right, const char *name) {
-    ASTNode *n = malloc(sizeof(ASTNode));
-    n->type = type;
-    n->name = name ? strdup(name) : NULL;
-    n->value = 0;
-    n->left = left;
-    n->right = right;
+ASTNode *new_node(NodeType node_type, const char *name) {
+    ASTNode *n = (ASTNode *) malloc(sizeof(ASTNode));
+    if (n == NULL) 
+        fprintf(listing,"Out of memory error at line %d\n",lineno);
+
+    n->node_type = node_type;
+    n->attr.name = name ? strdup(name) : NULL;
+    for (int i = 0; i < MAXCHILDREN; i++)
+        n->child[i] = NULL;
+    n->sibling = NULL;
+    n->lineno = lineno;
     return n;
 }
 
-ASTNode *new_id(const char *name) {
-    return new_node(NODE_ID, NULL, NULL, name);
-}
-
 ASTNode *new_num(int val) {
-    ASTNode *n = new_node(NODE_NUM, NULL, NULL, "Const");
-    n->value = val;
+    ASTNode *n = new_node(NODE_NUM, NULL);
+    n->attr.val = val;
     return n;
 }
 
@@ -30,8 +30,8 @@ void print_indent(int depth) {
     }
 }
 
-const char* node_type_str(NodeType type) {
-    switch (type) {
+const char* node_type_str(NodeType node_type) {
+    switch (node_type) {
         case NODE_PROGRAM: return "PROGRAM";
         case NODE_HEADER: return "HEADER";
         case NODE_DECL_LIST: return "DECL_LIST";
@@ -67,27 +67,36 @@ const char* node_type_str(NodeType type) {
 void print_tree(ASTNode *node, int depth) {
     if (!node) return;
     print_indent(depth);
-    fprintf(listing, "%s", node_type_str(node->type));
+    fprintf(listing, "%s", node_type_str(node->node_type));
 
-    if (node->type == NODE_ID || node->type == NODE_TYPE || node->type == NODE_RELOP || node->type == NODE_VAR || node->type == NODE_CALL) {
-        fprintf(listing, " (%s)", node->name);
-    } else if (node->type == NODE_NUM) {
-        fprintf(listing, " (%d)", node->value);
+    if (node->node_type == NODE_VAR_DECL || node->node_type == NODE_ARR_DECL ||
+        node->node_type == NODE_FUNC_DECL || node->node_type == NODE_PARAM ||
+        node->node_type == NODE_PARAM_ARR || node->node_type == NODE_SEL_STMT ||
+        node->node_type == NODE_ARR || node->node_type == NODE_VAR ||
+        node->node_type == NODE_CALL || node->node_type == NODE_HEADER) {
+        fprintf(listing, " (%s)\n", node->attr.name);
+    } else if (node->node_type == NODE_NUM) {
+        fprintf(listing, " (%d)\n", node->attr.val);
+    } else if (node->node_type == NODE_RELOP ||
+               node->node_type == NODE_ADD_EXPR ||
+               node->node_type == NODE_TERM) {
+        fprintf(listing, ": ");
+        print_token(node->attr.op,"\0");
+    } else {
+        fprintf(listing, "\n");
     }
 
-    fprintf(listing, "\n");
-
-    print_tree(node->left, depth + 1);
-    print_tree(node->right, depth + 1);
+    for (int i = 0; i < MAXCHILDREN; i++)
+        print_tree(node->child[i], depth + 1);
 }
 
 void free_ast(ASTNode *node) {
     if (!node) return;
 
-    free_ast(node->left);
-    free_ast(node->right);
+    for (int i = 0; i < MAXCHILDREN; i++)
+        free_ast(node->child[i]);
 
-    if (node->name) free(node->name);
+    // if (node->name) free(node->name);
 
     free(node);
 }

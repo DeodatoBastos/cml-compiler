@@ -21,12 +21,13 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 
 "output"                         { return WRITE; }
 "input"                          { return READ; }
-"int"                            { return INT; }
-"void"                           { return VOID; }
 "return"                         { return RETURN; }
 "while"                          { return WHILE; }
 "if"                             { return IF; }
 "else"                           { return ELSE; }
+
+"int"                            { return INT; }
+"void"                           { return VOID; }
 
 ^"#include"[ \t]*<.+\.h>         { yylval.sval = strdup(yytext); return INCLUDE; }
 
