@@ -5,15 +5,7 @@
 
 typedef int TokenType;
 
-typedef enum {
-    NODE_VAR_DECL, NODE_ARR_DECL, NODE_TYPE, NODE_FUNC_DECL, NODE_PARAM,
-    NODE_PARAM_ARR, NODE_COMPOUND, NODE_SEL_STMT, NODE_ITER_STMT,
-    NODE_RETURN_STMT, NODE_READ, NODE_WRITE, NODE_ASSIGN, NODE_VAR,
-    NODE_ARR, NODE_RELOP, NODE_ADDOP, NODE_MULOP,
-    NODE_CALL, NODE_NUM,
-} NodeType;
-
-typedef enum {Stmt, Exp} NodeKind;
+typedef enum {Stmt, Expr} NodeKind;
 typedef enum {
     Compound, If, While, Return,
     Read, Write, Assign
@@ -23,20 +15,19 @@ typedef enum {
     VarDecl, Var, ParamVar,
     ArrDecl, Arr, ParamArr,
     FuncDecl, FuncCall
-} ExpKind;
-typedef enum {Void, Integer, Boolean} ExpType;
+} ExprKind;
+typedef enum {Void, Integer, Boolean} ExprType;
 
 typedef struct ASTNode {
-    NodeType node_type;
     int lineno;
 
-    // NodeKind node_kind;
-    ExpType type;
+    NodeKind node_kind;
+    ExprType type;
 
-    // union {
-    //     StmtKind stmt;
-    //     ExpKind exp;
-    // } kind;
+    union {
+        StmtKind stmt;
+        ExprKind expr;
+    } kind;
 
     union {
         TokenType op;

@@ -1,8 +1,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-ASTNode *new_node(NodeType node_type, const char *name);
-ASTNode *new_num(int val);
+ASTNode *new_stmt_node(StmtKind stmt_kind, const char *name);
+ASTNode *new_expr_node(ExprKind expr_kind, const char *name);
 void print_tree(ASTNode *node, int depth);
 void free_ast(ASTNode *node);
 

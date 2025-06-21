@@ -5,23 +5,41 @@
 #include "global.h"
 #include "utils.h"
 
-ASTNode *new_node(NodeType node_type, const char *name) {
-    ASTNode *n = (ASTNode *) malloc(sizeof(ASTNode));
-    if (n == NULL) 
-        fprintf(listing,"Out of memory error at line %d\n",lineno);
+ASTNode *new_stmt_node(StmtKind kind, const char *name) {
+    ASTNode * n = (ASTNode *) malloc(sizeof(ASTNode));
+    if (n == NULL) {
+        fprintf(listing, "Out of memory error at line %d\n", lineno);
+        return NULL;
+    }
 
-    n->node_type = node_type;
+    n->node_kind = Stmt;
+    n->kind.stmt = kind;
+    n->lineno = lineno;
     n->attr.name = name ? strdup(name) : NULL;
+
+    n->sibling = NULL;
     for (int i = 0; i < MAXCHILDREN; i++)
         n->child[i] = NULL;
-    n->sibling = NULL;
-    n->lineno = lineno;
+
     return n;
 }
 
-ASTNode *new_num(int val) {
-    ASTNode *n = new_node(NODE_NUM, NULL);
-    n->attr.val = val;
+ASTNode *new_expr_node(ExprKind kind, const char *name) {
+    ASTNode * n = (ASTNode *) malloc(sizeof(ASTNode));
+    if (n == NULL) {
+        fprintf(listing, "Out of memory error at line %d\n", lineno);
+        return NULL;
+    }
+
+    n->node_kind = Expr;
+    n->kind.stmt = kind;
+    n->lineno = lineno;
+    n->attr.name = name ? strdup(name) : NULL;
+
+    n->sibling = NULL;
+    for (int i = 0; i < MAXCHILDREN; i++)
+        n->child[i] = NULL;
+
     return n;
 }
 
@@ -31,50 +49,69 @@ void print_indent(int depth) {
     }
 }
 
-const char* node_type_str(NodeType node_type) {
-    switch (node_type) {
-        case NODE_VAR_DECL: return "VAR_DECL";
-        case NODE_ARR_DECL: return "ARR_DECL";
-        case NODE_TYPE: return "TYPE";
-        case NODE_FUNC_DECL: return "FUNC_DECL";
-        case NODE_PARAM: return "PARAM";
-        case NODE_PARAM_ARR: return "PARAM_ARR";
-        case NODE_COMPOUND: return "COMPOUND";
-        case NODE_SEL_STMT: return "SEL_STMT";
-        case NODE_ITER_STMT: return "ITER_STMT";
-        case NODE_RETURN_STMT: return "RETURN_STMT";
-        case NODE_READ: return "READ";
-        case NODE_WRITE: return "WRITE";
-        case NODE_ASSIGN: return "ASSIGN";
-        case NODE_VAR: return "VAR";
-        case NODE_ARR: return "ARR";
-        case NODE_RELOP: return "RELOP";
-        case NODE_ADDOP: return "ADDOP";
-        case NODE_MULOP: return "MULOP";
-        case NODE_CALL: return "CALL";
-        case NODE_NUM: return "NUM";
-        default: return "UNKNOWN";
+const char* node_kind_str(ASTNode* node) {
+    if (node->node_kind == Stmt) {
+        switch (node->kind.stmt) {
+            case Compound: return "Compound";
+            case If: return "If";
+            case While: return "While";
+            case Return: return "Return";
+            case Read: return "Read: ";
+            case Write: return "Write";
+            case Assign: return "Assign to: ";
+            default: return "Unknown StmtNode kind";
+        }
+    } else if (node->node_kind == Expr) {
+        switch (node->kind.expr) {
+            case Op: return "Op: ";
+            case Const: return "Const: ";
+            case VarDecl: return "Var declaration: ";
+            case ArrDecl: return "Array declaration: ";
+            case Var: return "Var: ";
+            case Arr: return "Array: ";
+            case ParamVar: return "Paarameter Var: ";
+            case ParamArr: return "Parameter Array: ";
+            case FuncDecl: return "Function declaration: ";
+            case FuncCall: return "Function call: ";
+            default: return "Unknown ExprNode kind";
+        }
+    } else return "Unkown node kind";
+}
+
+const char* type_str(ExprType type) {
+    switch (type) {
+        case Void: return "void";
+        case Integer: return "int";
+        case Boolean: return "bool";
+        default: return "unkown type"; 
     }
 }
 
 void print_tree(ASTNode *node, int depth) {
     while(node != NULL) {
         print_indent(depth);
-        fprintf(listing, "%s", node_type_str(node->node_type));
+        fprintf(listing, "%s", node_kind_str(node));
 
-        if (node->node_type == NODE_VAR_DECL || node->node_type == NODE_ARR_DECL ||
-            node->node_type == NODE_FUNC_DECL || node->node_type == NODE_PARAM ||
-            node->node_type == NODE_PARAM_ARR || node->node_type == NODE_SEL_STMT ||
-            node->node_type == NODE_ARR || node->node_type == NODE_VAR ||
-            node->node_type == NODE_TYPE || node->node_type == NODE_CALL) {
-            fprintf(listing, " (%s)\n", node->attr.name);
-        } else if (node->node_type == NODE_NUM) {
-            fprintf(listing, " (%d)\n", node->attr.val);
-        } else if (node->node_type == NODE_RELOP ||
-                   node->node_type == NODE_ADDOP ||
-                   node->node_type == NODE_MULOP) {
-            fprintf(listing, ": ");
-            print_token(node->attr.op,"\0");
+        if(node->node_kind == Stmt) {
+            if(node->kind.stmt == Read || node->kind.stmt == Assign) {
+                fprintf(listing, "%s\n", node->attr.name);
+            } else {
+                fprintf(listing, "\n");
+            }
+        } else if (node->node_kind == Expr) {
+            if(node->kind.expr == Const) {
+                fprintf(listing, "(%d)\n", node->attr.val);
+            }
+            else if (node->kind.expr == Op) {
+                print_token(node->attr.op,"\0");
+            } else if(node->kind.expr == FuncDecl || node->kind.expr == FuncCall) {
+                fprintf(listing, "%s (%s)\n", node->attr.name, type_str(node->type));
+            } else if(node->kind.expr == VarDecl || node->kind.expr == Var || node->kind.expr == ParamVar ||
+                      node->kind.expr == ArrDecl || node->kind.expr == Arr || node->kind.expr == ParamArr) {
+                fprintf(listing, "%s\n", node->attr.name);
+            } else {
+                fprintf(listing, "\n");
+            }
         } else {
             fprintf(listing, "\n");
         }
@@ -89,11 +126,12 @@ void print_tree(ASTNode *node, int depth) {
 void free_ast(ASTNode *node) {
     if (!node) return;
 
-    if (node->attr.name != NULL &&
-        node->node_type != NODE_RELOP &&
-        node->node_type != NODE_ADDOP &&
-        node->node_type != NODE_MULOP &&
-        node->node_type != NODE_NUM)
+    if (node->attr.name != NULL && !(
+            node->node_kind == Expr && (
+                node->kind.expr == Op ||
+                node->kind.expr == Const
+            )
+        ))
         free(node->attr.name);
 
     for (int i = 0; i < MAXCHILDREN; i++) {
