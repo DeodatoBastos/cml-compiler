@@ -70,23 +70,24 @@ headers: headers INCLUDE {
 ;
 
 decl_list: decl_list decl {
-            $$ = new_node(NODE_DECL_LIST, NULL);
-            $$->child[0] = $1;
-            $$->child[1] = $2;
+            ASTNode *n = $1;
+            if (n != NULL) {
+                while(n->sibling != NULL)
+                    n = n->sibling;
+                n->sibling = $2;
+                $$ = $1;
+            } else $$ = $2;
          }
          | decl {
-            $$ = new_node(NODE_DECL_LIST, NULL);
-            $$->child[0] = $1;
+            $$ = $1;
          }
 ;
 
 decl: var_decl {
-      $$ = new_node(NODE_DECL, NULL);
-      $$->child[0] = $1;
+      $$ = $1;
     }
     | func_decl {
-      $$ = new_node(NODE_DECL, NULL);
-      $$->child[0] = $1;
+      $$ = $1;
     }
 ;
 
@@ -124,13 +125,16 @@ params: param_list { $$ = $1; }
 ;
 
 param_list: param_list COMMA param {
-            $$ = new_node(NODE_PARAM_LIST, NULL);
-            $$->child[0] = $1;
-            $$->child[1] = $3;
+            ASTNode *n = $1;
+            if (n != NULL) {
+                while(n->sibling != NULL)
+                    n = n->sibling;
+                n->sibling = $3;
+                $$ = $1;
+            } else $$ = $3;
           }
           | param {
-            $$ = new_node(NODE_PARAM_LIST, NULL);
-            $$->child[0] = $1;
+            $$ = $1;
           }
 ;
 
@@ -152,9 +156,13 @@ compound_stmt: LBRACE local_decl stmt_list RBRACE {
 ;
 
 local_decl: local_decl var_decl {
-            $$ = new_node(NODE_LOCAL_DECL, NULL);
-            $$->child[0] = $1;
-            $$->child[1] = $2;
+            ASTNode *n = $1;
+            if (n != NULL) {
+                while(n->sibling != NULL)
+                    n = n->sibling;
+                n->sibling = $2;
+                $$ = $1;
+            } else $$ = $2;
           }
           | /* empty */ {
             $$ = NULL;
@@ -162,9 +170,13 @@ local_decl: local_decl var_decl {
 ;
 
 stmt_list: stmt_list stmt {
-            $$ = new_node(NODE_STMT_LIST, NULL);
-            $$->child[0] = $1;
-            $$->child[1] = $2;
+            ASTNode *n = $1;
+            if (n != NULL) {
+                while(n->sibling != NULL)
+                    n = n->sibling;
+                n->sibling = $2;
+                $$ = $1;
+            } else $$ = $2;
          }
          | /* empty */ {
             $$ = NULL;
@@ -178,12 +190,11 @@ stmt: expr_stmt { $$ = $1; }
     | return_stmt { $$ = $1; }
     | read_stmt { $$ = $1; }
     | write_stmt { $$ = $1; }
-    | ERROR { $$ = NULL; }
+    | error { $$ = NULL; }
 ;
 
 expr_stmt: expr SEMICOLON {
-            $$ = new_node(NODE_EXPR_STMT, NULL);
-            $$->child[0] = $1;
+            $$ = $1;
          }
          | SEMICOLON {
             $$ = NULL;
@@ -252,9 +263,9 @@ var: ID {
 
 simple_expr: add_expr relop add_expr {
             $$ = new_node(NODE_RELOP, NULL);
-            $$->attr.op = $2;
             $$->child[0] = $1;
             $$->child[1] = $3;
+            $$->attr.op = $2;
            }
            | add_expr {
             $$ = $1;
@@ -271,9 +282,9 @@ relop: LE { $$ = LE; }
 
 add_expr: add_expr addop term {
             $$ = new_node(NODE_ADD_EXPR, NULL);
-            $$->attr.op = $2;
             $$->child[0] = $1;
             $$->child[1] = $3;
+            $$->attr.op = $2;
         }
         | term {
             $$ = $1;
@@ -286,9 +297,9 @@ addop: ADD { $$ = ADD; }
 
 term: term mulop factor {
         $$ = new_node(NODE_TERM, NULL);
-        $$->attr.op = $2;
         $$->child[0] = $1;
         $$->child[1] = $3;
+        $$->attr.op = $2;
     }
     | factor {
         $$ = $1;
@@ -312,7 +323,7 @@ factor: LPAREN expr RPAREN {
       | NUM {
         $$ = new_num($1);
       }
-      | ERROR {
+      | error {
         $$ = NULL;
       }
 ;
@@ -332,13 +343,16 @@ args: arg_list {
 ;
 
 arg_list: arg_list COMMA expr {
-            $$ = new_node(NODE_ARG_LIST, NULL);
-            $$->child[0] = $1;
-            $$->child[1] = $3;
+            ASTNode *n = $1;
+            if (n != NULL) {
+                while(n->sibling != NULL)
+                    n = n->sibling;
+                n->sibling = $3;
+                $$ = $1;
+            } else $$ = $3;
         }
         | expr {
-            $$ = new_node(NODE_ARG_LIST, NULL);
-            $$->child[0] = $1;
+            $$ = $1;
         }
 ;
 

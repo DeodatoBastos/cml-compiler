@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "global.h"
 #include "utils.h"
 
@@ -37,10 +38,12 @@ const char* node_type_str(NodeType node_type) {
         case NODE_DECL_LIST: return "DECL_LIST";
         case NODE_DECL: return "DECL";
         case NODE_VAR_DECL: return "VAR_DECL";
+        case NODE_ARR_DECL: return "ARR_DECL";
         case NODE_TYPE: return "TYPE";
         case NODE_FUNC_DECL: return "FUNC_DECL";
         case NODE_PARAM_LIST: return "PARAM_LIST";
         case NODE_PARAM: return "PARAM";
+        case NODE_PARAM_ARR: return "PARAM_ARR";
         case NODE_COMPOUND: return "COMPOUND";
         case NODE_LOCAL_DECL: return "LOCAL_DECL";
         case NODE_STMT_LIST: return "STMT_LIST";
@@ -50,6 +53,7 @@ const char* node_type_str(NodeType node_type) {
         case NODE_RETURN_STMT: return "RETURN_STMT";
         case NODE_ASSIGN: return "ASSIGN";
         case NODE_VAR: return "VAR";
+        case NODE_ARR: return "ARR";
         case NODE_SIMPLE_EXPR: return "SIMPLE_EXPR";
         case NODE_RELOP: return "RELOP";
         case NODE_ADD_EXPR: return "ADD_EXPR";
@@ -65,38 +69,48 @@ const char* node_type_str(NodeType node_type) {
 }
 
 void print_tree(ASTNode *node, int depth) {
-    if (!node) return;
-    print_indent(depth);
-    fprintf(listing, "%s", node_type_str(node->node_type));
+    while(node != NULL) {
+        print_indent(depth);
+        fprintf(listing, "%s", node_type_str(node->node_type));
 
-    if (node->node_type == NODE_VAR_DECL || node->node_type == NODE_ARR_DECL ||
-        node->node_type == NODE_FUNC_DECL || node->node_type == NODE_PARAM ||
-        node->node_type == NODE_PARAM_ARR || node->node_type == NODE_SEL_STMT ||
-        node->node_type == NODE_ARR || node->node_type == NODE_VAR ||
-        node->node_type == NODE_CALL || node->node_type == NODE_HEADER) {
-        fprintf(listing, " (%s)\n", node->attr.name);
-    } else if (node->node_type == NODE_NUM) {
-        fprintf(listing, " (%d)\n", node->attr.val);
-    } else if (node->node_type == NODE_RELOP ||
-               node->node_type == NODE_ADD_EXPR ||
-               node->node_type == NODE_TERM) {
-        fprintf(listing, ": ");
-        print_token(node->attr.op,"\0");
-    } else {
-        fprintf(listing, "\n");
+        if (node->node_type == NODE_VAR_DECL || node->node_type == NODE_ARR_DECL ||
+            node->node_type == NODE_FUNC_DECL || node->node_type == NODE_PARAM ||
+            node->node_type == NODE_PARAM_ARR || node->node_type == NODE_SEL_STMT ||
+            node->node_type == NODE_ARR || node->node_type == NODE_VAR ||
+            node->node_type == NODE_TYPE ||
+            node->node_type == NODE_CALL || node->node_type == NODE_HEADER) {
+            fprintf(listing, " (%s)\n", node->attr.name);
+        } else if (node->node_type == NODE_NUM) {
+            fprintf(listing, " (%d)\n", node->attr.val);
+        } else if (node->node_type == NODE_RELOP ||
+                   node->node_type == NODE_ADD_EXPR ||
+                   node->node_type == NODE_TERM) {
+            fprintf(listing, ": ");
+            print_token(node->attr.op,"\0");
+        } else {
+            fprintf(listing, "\n");
+        }
+
+        for (int i = 0; i < MAXCHILDREN; i++)
+            print_tree(node->child[i], depth + 1);
+
+        node = node->sibling;
     }
-
-    for (int i = 0; i < MAXCHILDREN; i++)
-        print_tree(node->child[i], depth + 1);
 }
 
 void free_ast(ASTNode *node) {
     if (!node) return;
 
-    for (int i = 0; i < MAXCHILDREN; i++)
-        free_ast(node->child[i]);
+    if (node->attr.name != NULL && node->node_type != NODE_TERM &&
+        node->node_type != NODE_ADD_EXPR && node->node_type != NODE_RELOP &&
+        node->node_type != NODE_NUM)
+        free(node->attr.name);
 
-    // if (node->name) free(node->name);
+    for (int i = 0; i < MAXCHILDREN; i++) {
+        free_ast(node->child[i]);
+    }
+
+    free_ast(node->sibling);
 
     free(node);
 }
@@ -158,7 +172,7 @@ void print_token(TokenType token, const char* tokenString) {
     }
 }
 
-char * copy_str(char * s) {
+char * copy_str(char *s) {
     int n;
     char * t;
     if (s==NULL)

@@ -7,7 +7,7 @@ typedef int TokenType;
 
 typedef enum {
     NODE_PROGRAM, NODE_HEADER, NODE_DECL_LIST, NODE_DECL, NODE_VAR_DECL, NODE_ARR_DECL,
-    NODE_TYPE, NODE_FUNC_DECL, NODE_FUNC_BODY, NODE_PARAM_LIST, NODE_PARAM, NODE_PARAM_ARR,
+    NODE_TYPE, NODE_FUNC_DECL, NODE_PARAM_LIST, NODE_PARAM, NODE_PARAM_ARR,
     NODE_COMPOUND,
     NODE_LOCAL_DECL, NODE_STMT_LIST, NODE_EXPR_STMT, NODE_SEL_STMT, NODE_ITER_STMT,
     NODE_RETURN_STMT, NODE_ASSIGN, NODE_VAR, NODE_ARR, NODE_SIMPLE_EXPR, NODE_RELOP,
@@ -25,13 +25,13 @@ typedef struct ASTNode {
     NodeType node_type;
     int lineno;
 
-    NodeKind node_kind;
+    // NodeKind node_kind;
     ExpType type;
 
-    union {
-        StmtKind stmt;
-        ExpKind exp;
-    } kind;
+    // union {
+    //     StmtKind stmt;
+    //     ExpKind exp;
+    // } kind;
 
     // char* name;
     // int value;
