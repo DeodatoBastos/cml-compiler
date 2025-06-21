@@ -29,8 +29,6 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 "int"                            { return INT; }
 "void"                           { return VOID; }
 
-^"#include"[ \t]*<.+\.h>         { yylval.sval = strdup(yytext); return INCLUDE; }
-
 [-]?{digit}+                     { yylval.ival = atoi(yytext); return NUM; }
 {identifier}                     { yylval.sval = strdup(yytext); return ID; }
 

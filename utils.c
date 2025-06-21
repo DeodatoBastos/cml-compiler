@@ -33,37 +33,26 @@ void print_indent(int depth) {
 
 const char* node_type_str(NodeType node_type) {
     switch (node_type) {
-        case NODE_PROGRAM: return "PROGRAM";
-        case NODE_HEADER: return "HEADER";
-        case NODE_DECL_LIST: return "DECL_LIST";
-        case NODE_DECL: return "DECL";
         case NODE_VAR_DECL: return "VAR_DECL";
         case NODE_ARR_DECL: return "ARR_DECL";
         case NODE_TYPE: return "TYPE";
         case NODE_FUNC_DECL: return "FUNC_DECL";
-        case NODE_PARAM_LIST: return "PARAM_LIST";
         case NODE_PARAM: return "PARAM";
         case NODE_PARAM_ARR: return "PARAM_ARR";
         case NODE_COMPOUND: return "COMPOUND";
-        case NODE_LOCAL_DECL: return "LOCAL_DECL";
-        case NODE_STMT_LIST: return "STMT_LIST";
-        case NODE_EXPR_STMT: return "EXPR_STMT";
         case NODE_SEL_STMT: return "SEL_STMT";
         case NODE_ITER_STMT: return "ITER_STMT";
         case NODE_RETURN_STMT: return "RETURN_STMT";
+        case NODE_READ: return "READ";
+        case NODE_WRITE: return "WRITE";
         case NODE_ASSIGN: return "ASSIGN";
         case NODE_VAR: return "VAR";
         case NODE_ARR: return "ARR";
-        case NODE_SIMPLE_EXPR: return "SIMPLE_EXPR";
         case NODE_RELOP: return "RELOP";
-        case NODE_ADD_EXPR: return "ADD_EXPR";
-        case NODE_TERM: return "TERM";
+        case NODE_ADDOP: return "ADDOP";
+        case NODE_MULOP: return "MULOP";
         case NODE_CALL: return "CALL";
-        case NODE_ARG_LIST: return "ARG_LIST";
-        case NODE_WRITE: return "WRITE";
-        case NODE_READ: return "READ";
         case NODE_NUM: return "NUM";
-        case NODE_ID: return "ID";
         default: return "UNKNOWN";
     }
 }
@@ -77,14 +66,13 @@ void print_tree(ASTNode *node, int depth) {
             node->node_type == NODE_FUNC_DECL || node->node_type == NODE_PARAM ||
             node->node_type == NODE_PARAM_ARR || node->node_type == NODE_SEL_STMT ||
             node->node_type == NODE_ARR || node->node_type == NODE_VAR ||
-            node->node_type == NODE_TYPE ||
-            node->node_type == NODE_CALL || node->node_type == NODE_HEADER) {
+            node->node_type == NODE_TYPE || node->node_type == NODE_CALL) {
             fprintf(listing, " (%s)\n", node->attr.name);
         } else if (node->node_type == NODE_NUM) {
             fprintf(listing, " (%d)\n", node->attr.val);
         } else if (node->node_type == NODE_RELOP ||
-                   node->node_type == NODE_ADD_EXPR ||
-                   node->node_type == NODE_TERM) {
+                   node->node_type == NODE_ADDOP ||
+                   node->node_type == NODE_MULOP) {
             fprintf(listing, ": ");
             print_token(node->attr.op,"\0");
         } else {
@@ -101,8 +89,10 @@ void print_tree(ASTNode *node, int depth) {
 void free_ast(ASTNode *node) {
     if (!node) return;
 
-    if (node->attr.name != NULL && node->node_type != NODE_TERM &&
-        node->node_type != NODE_ADD_EXPR && node->node_type != NODE_RELOP &&
+    if (node->attr.name != NULL &&
+        node->node_type != NODE_RELOP &&
+        node->node_type != NODE_ADDOP &&
+        node->node_type != NODE_MULOP &&
         node->node_type != NODE_NUM)
         free(node->attr.name);
 
@@ -126,10 +116,6 @@ void print_token(TokenType token, const char* tokenString) {
         case IF:
         case ELSE:
               fprintf(listing, "reserved word: %s\n", tokenString);
-              break;
-
-        case INCLUDE:
-              fprintf(listing, "header: %s\n", tokenString);
               break;
 
         case ASSIGN: fprintf(listing, "=\n"); break;
