@@ -3,6 +3,8 @@
 
 #define MAXTOKENLEN 40
 
+#include "ast.h"
+
 extern char tokenString[MAXTOKENLEN+1];
 
 TokenType get_token(void);

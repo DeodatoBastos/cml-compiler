@@ -1,11 +1,10 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
 #include "global.h"
 #include "utils.h"
-#include "scan.h"
+// #include "scan.h"
 #include "parse.h"
 
 /* allocate global variables */

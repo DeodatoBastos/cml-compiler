@@ -1,7 +1,6 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <string.h>
 #include "global.h"
 #include "utils.h"
 
@@ -32,7 +31,7 @@ ASTNode *new_expr_node(ExprKind kind, const char *name) {
     }
 
     n->node_kind = Expr;
-    n->kind.stmt = kind;
+    n->kind.expr = kind;
     n->lineno = lineno;
     n->attr.name = name ? strdup(name) : NULL;
 
@@ -84,6 +83,21 @@ const char* type_str(ExprType type) {
         case Integer: return "int";
         case Boolean: return "bool";
         default: return "unkown type"; 
+    }
+}
+
+const char* str_type_str(ExprKind kind) {
+    switch (kind) {
+        case VarDecl:
+        case Var:
+            return "Var";
+        case ArrDecl:
+        case Arr:
+            return "Arr";
+        case FuncDecl:
+        case FuncCall:
+            return "Func";
+        default: return "unkown type";
     }
 }
 

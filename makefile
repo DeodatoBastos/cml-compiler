@@ -31,7 +31,7 @@ $(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
 	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(LEX_C) $(BISON_C) -lfl
 
 # Run the program with a single file from the "example" directory
-test-file: $(OUTPUT)
+example-file: $(OUTPUT)
 	@indir="example"; \
 	read -p "Enter filename (in '$$indir'): " filename; \
 	file="$$indir/$$filename"; \
@@ -67,7 +67,7 @@ run-file: $(OUTPUT)
 	fi
 
 # Run the program on all files in the "example" directory, optionally saving output
-test: $(OUTPUT)
+example: $(OUTPUT)
 	@indir="example"; \
 	outdir="results"; \
 	if [ -d "$$indir" ]; then \

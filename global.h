@@ -1,6 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <stdio.h>
 #include <stdbool.h>
 #include "ast.h"
 
