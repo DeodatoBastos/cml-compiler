@@ -8,13 +8,15 @@ LEX_SRC=scan.l
 BISON_SRC=parser.y
 MAIN_SRC=main.c
 UTILS_SRC=utils.c
+ANALYSIS_SRC=symtab.c analyze.c
 LEX_C=lex.yy.c
 BISON_C=parser.tab.c
 BISON_H=parser.tab.h
 OUTPUT=frontend.out
 
 # Optional flags passed via ARGS
-ARGS=--ts --tp
+# ARGS ?=
+ARGS=--ts --tp --ta
 
 # Default rule
 all: $(OUTPUT)
@@ -27,8 +29,8 @@ $(BISON_C) $(BISON_H): $(BISON_SRC)
 	$(BISON) -v -d $(BISON_SRC)
 
 # Compile the frontend
-$(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
-	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(LEX_C) $(BISON_C) -lfl
+$(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
+	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) -lfl
 
 # Run the program with a single file from the "example" directory
 example-file: $(OUTPUT)

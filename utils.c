@@ -82,11 +82,11 @@ const char* type_str(ExprType type) {
         case Void: return "void";
         case Integer: return "int";
         case Boolean: return "bool";
-        default: return "unkown type"; 
+        default: return "unkown type";
     }
 }
 
-const char* str_type_str(ExprKind kind) {
+const char* var_type_str(ExprKind kind) {
     switch (kind) {
         case VarDecl:
         case Var:

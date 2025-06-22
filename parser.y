@@ -233,10 +233,12 @@ expr: var ASSIGN expr {
 
 var: ID {
     $$ = new_expr_node(Var, $1);
+    $$->type = Integer;
    }
    | ID LBRACK expr RBRACK {
     $$ = new_expr_node(Arr, $1);
     $$->child[0] = $3;
+    $$->type = Integer;
    }
 ;
 

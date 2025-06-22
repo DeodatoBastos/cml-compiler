@@ -6,6 +6,7 @@
 #include "utils.h"
 // #include "scan.h"
 #include "parse.h"
+#include "analyze.h"
 
 /* allocate global variables */
 int lineno = 0;
@@ -76,6 +77,14 @@ int main(int argc, char **argv) {
     if (TraceParse) {
         fprintf(listing, "\nSyntax tree:\n");
         print_tree(syntaxTree, 0);
+    }
+
+    if (!Error) {
+        if (TraceAnalyze) fprintf(listing, "\nBuilding Symbol Table...\n");
+        build_symtab(syntaxTree);
+        if (TraceAnalyze) fprintf(listing,"\nChecking Types...\n");
+        type_check(syntaxTree);
+        if (TraceAnalyze) fprintf(listing,"\nType Checking Finished\n");
     }
 
     fclose(source);
