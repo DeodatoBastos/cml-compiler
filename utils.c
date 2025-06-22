@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ast.h"
 #include "global.h"
 #include "utils.h"
 
@@ -40,6 +41,24 @@ ASTNode *new_expr_node(ExprKind kind, const char *name) {
         n->child[i] = NULL;
 
     return n;
+}
+
+ASTNode *get_return_node(ASTNode* node) {
+    ASTNode *r = NULL;
+    if (node == NULL) return r;
+
+    for (int i = 0; i < MAXCHILDREN; i++) {
+        if (r == NULL)
+            r = get_return_node(node->child[i]);
+    }
+
+    if (r == NULL)
+        r = get_return_node(node->sibling);
+
+    if (node->node_kind == Stmt && node->kind.stmt == Return)
+        r = node;
+
+    return r;
 }
 
 void print_indent(int depth) {

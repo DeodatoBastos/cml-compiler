@@ -1,5 +1,7 @@
 #include <stdbool.h>
+#include <stdio.h>
 #include "ast.h"
+#include "utils.h"
 #include "global.h"
 #include "symtab.h"
 #include "analyze.h"
@@ -13,7 +15,7 @@ static void type_error(ASTNode *n, char *message) {
 }
 
 static void var_error(ASTNode *n, char *var_type, char *msg) {
-    fprintf(listing, "%s '%s' %s at line %d\n", var_type, n->attr.name, msg, n->lineno);
+    fprintf(listing, "Var error: %s '%s' %s at line %d\n", var_type, n->attr.name, msg, n->lineno);
     Error = true;
 }
 
@@ -173,21 +175,32 @@ static void check_node(ASTNode *n) {
     switch (n->node_kind) {
         case Expr:
             switch (n->kind.expr) {
-                case Op:
-                    if ((n->child[0]->type != Integer) || (n->child[1]->type != Integer))
-                        type_error(n, "Op applied to non-integer");
+                ASTNode *return_node;
+                // case Op:
+                //     if ((n->child[0]->type != Integer) || (n->child[1]->type != Integer))
+                //         type_error(n, "Op applied to non-integer");
 
-                    if ((n->attr.op == EQ) || (n->attr.op == NE) ||
-                        (n->attr.op == LE) || (n->attr.op == LT) ||
-                        (n->attr.op == GE) || (n->attr.op == GT))
-                        n->type = Boolean;
-                    else
-                        n->type = Integer;
-                    break;
+                //     if ((n->attr.op == EQ) || (n->attr.op == NE) ||
+                //         (n->attr.op == LE) || (n->attr.op == LT) ||
+                //         (n->attr.op == GE) || (n->attr.op == GT))
+                //         n->type = Boolean;
+                //     else
+                //         n->type = Integer;
+                //     break;
                 // case Const:
                 // case Var:
                 //     n->type = Integer;
                 //     break;
+                case FuncDecl:
+                    return_node = get_return_node(n->child[1]);
+                    if (return_node == NULL)
+                        type_error(n, "return stmt not found");
+                    else if (n->type != return_node->type)
+                        type_error(return_node, "return type must be the same type as the function definition");
+                    break;
+                case FuncCall:
+                    n->type = st_lookup_type(n->attr.name, 0);
+                    break;
                 default:
                     break;
             }

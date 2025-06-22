@@ -202,10 +202,12 @@ iter_stmt: WHILE LPAREN expr RPAREN stmt {
 
 return_stmt: RETURN SEMICOLON {
             $$ = new_stmt_node(Return, NULL);
+            $$->type = Void;
            }
            | RETURN expr SEMICOLON {
             $$ = new_stmt_node(Return, NULL);
             $$->child[0] = $2;
+            $$->type = Integer;
            }
 ;
 

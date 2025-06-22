@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "ast.h"
 #include "global.h"
 #include "utils.h"
 #include "symtab.h"
@@ -14,7 +15,7 @@
 #define SHIFT 4
 
 /* the hash function */
-static int hash (char * key) {
+static int hash(char * key) {
     int temp = 0;
     int i = 0;
     while (key[i] != '\0') {
@@ -66,13 +67,25 @@ void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int line
 /* Function st_lookup returns the memory
  * location of a variable or -1 if not found
  */
-int st_lookup (char *name, int scope) {
+int st_lookup(char *name, int scope) {
     int h = hash(name);
     BucketList *l =  hashTable[h];
     while ((l != NULL) && (strcmp(name, l->name) != 0) && scope == l->scope) l = l->next;
 
     if (l == NULL || !l->active) return -1;
     else return l->memloc;
+}
+
+/* Function st_lookup_type returns the type
+ * of a variable or Void if not found
+ */
+ExprType st_lookup_type(char *name, int scope) {
+    int h = hash(name);
+    BucketList *l =  hashTable[h];
+    while ((l != NULL) && (strcmp(name, l->name) != 0) && scope == l->scope) l = l->next;
+
+    if (l == NULL || !l->active) return -1;
+    else return l->type;
 }
 
 /* Function st_delete delete the last

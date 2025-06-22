@@ -5,6 +5,7 @@
 
 ASTNode *new_stmt_node(StmtKind stmt_kind, const char *name);
 ASTNode *new_expr_node(ExprKind expr_kind, const char *name);
+ASTNode *get_return_node(ASTNode* node);
 void print_tree(ASTNode *node, int depth);
 void free_ast(ASTNode *node);
 

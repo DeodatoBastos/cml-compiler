@@ -38,10 +38,15 @@ typedef struct BucketListRec {
  */
 void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int lineno, int loc);
 
-/* Function st_lookup returns the memory 
+/* Function st_lookup returns the memory
  * location of a variable or -1 if not found
  */
 int st_lookup(char *name, int scope);
+
+/* Function st_lookup_type returns the type
+ * of a variable or Void if not found
+ */
+ExprType st_lookup_type(char *name, int scope);
 
 /* Function st_delete delete the last
  * entry with the given name
