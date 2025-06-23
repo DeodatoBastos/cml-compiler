@@ -227,6 +227,22 @@ static void check_node(ASTNode *n) {
                         }
                         tc = tc->sibling;
                         td = td->sibling;
+                        nc++;
+                        nd++;
+                    }
+                    while (tc != NULL) {
+                        tc = tc->sibling;
+                        nc++;
+                    }
+                    while (td != NULL) {
+                        td = td->sibling;
+                        nd++;
+                    }
+                    if (nc != nd) {
+                        asprintf(&msg, "too %s function '%s' expected '%d' arguments instead of '%d'",
+                                nd > nc ? "few" : "much", n->attr.name, nd, nc);
+                        type_error(n, msg);
+                        free(msg);
                     }
                     break;
                 default:
