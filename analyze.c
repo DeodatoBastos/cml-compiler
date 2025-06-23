@@ -21,6 +21,31 @@ static void var_error(ASTNode *n, char *var_type, char *msg) {
     Error = true;
 }
 
+static void delete_decls(ASTNode *n) {
+    if (!n) return;
+
+    switch (n->node_kind) {
+        case Expr:
+            switch (n->kind.expr) {
+                case FuncDecl:
+                case VarDecl:
+                case ArrDecl:
+                    st_delete(n->attr.name, scope);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+
+    for (int i = 0; i < MAXCHILDREN; i++) {
+        delete_decls(n->child[i]);
+    }
+    delete_decls(n->sibling);
+}
+
 /* Procedure traverse is a generic recursive
  * syntax tree traversal routine:
  * it applies pre_proc in preorder and post_proc
@@ -67,7 +92,7 @@ static void insert_node(ASTNode * n) {
         case Expr:
             switch (n->kind.expr) {
                 case VarDecl:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         // st_insert(n->attr.name, Var, n->type, scope, n->lineno, location++);
                         st_insert(n, scope, location++);
@@ -76,7 +101,7 @@ static void insert_node(ASTNode * n) {
                         var_error(n, "Variable", "redefined");
                     break;
                 case ArrDecl:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         // st_insert(n->attr.name, Arr, n->type, scope, n->lineno, location++);
                         st_insert(n, scope, location++);
@@ -85,7 +110,7 @@ static void insert_node(ASTNode * n) {
                         var_error(n, "Array", "redefined");
                     break;
                 case FuncDecl:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         // st_insert(n->attr.name, FuncDecl, n->type, scope, n->lineno, location++);
                         st_insert(n, scope, location++);
@@ -94,44 +119,51 @@ static void insert_node(ASTNode * n) {
                         var_error(n, "Function", "redefined");
                     break;
                 case ParamVar:
-                case ParamArr:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    // if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         // st_insert(n->attr.name, n->kind.expr, n->type, scope+1, n->lineno, location++);
                         st_insert(n, scope+1, location++);
-                    else
+                    // else
+                    //     /* already in table raise an error */
+                    //     var_error(n, "Variable", "redefined");
+                case ParamArr:
+                    // if (st_lookup(n->attr.name, scope) == NULL)
+                        // /* not yet in table, so treat as new definition */
+                        // st_insert(n->attr.name, n->kind.expr, n->type, scope+1, n->lineno, location++);
+                        st_insert(n, scope+1, location++);
+                    // else
                         /* already in table raise an error */
-                        var_error(n, "Variable", "redefined");
+                        // var_error(n, "Array", "redefined");
                     break;
                 case Var:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         var_error(n, "Variable", "never defined used");
                     else
                         /* already in table, so ignore location,
                          add line number of use only */
                         // st_insert(n->attr.name, Var, n->type, scope, n->lineno, 0);
-                        st_insert(n, scope+1, 0);
+                        st_insert(n, scope, 0);
                     break;
                 case Arr:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         var_error(n, "Array", "never defined used");
                     else
                         /* already in table, so ignore location,
                          add line number of use only */
                         // st_insert(n->attr.name, Arr, n->type, scope, n->lineno, 0);
-                        st_insert(n, scope+1, 0);
+                        st_insert(n, scope, 0);
                     break;
                 case FuncCall:
-                    if (st_lookup(n->attr.name, scope) == -1)
+                    if (st_lookup(n->attr.name, scope) == NULL)
                         /* not yet in table, so treat as new definition */
                         var_error(n, "Function", "never defined used");
                     else
                         /* already in table, so ignore location,
                          add line number of use only */
                         // st_insert(n->attr.name, FuncCall, n->type, scope, n->lineno, 0);
-                        st_insert(n, scope+1, 0);
+                        st_insert(n, scope, 0);
                     break;
                 default:
                     break;
@@ -151,6 +183,9 @@ static void delete_node(ASTNode * n) {
         case Stmt:
             switch (n->kind.stmt) {
                 case Compound:
+                    // pass for all the nodes and check if it is FuncDecl or VarDecl or ArrDecl
+                    delete_decls(n->child[0]);
+                    delete_decls(n->child[1]);
                     scope--;
                     break;
                 default:
@@ -159,14 +194,11 @@ static void delete_node(ASTNode * n) {
             break;
         case Expr:
             switch (n->kind.expr) {
-                case FuncDecl:
-                case VarDecl:
-                case ArrDecl:
-                case Var:
-                case Arr:
-                case FuncCall:
-                    st_delete(n->attr.name, scope);
-                    break;
+                // case FuncDecl:
+                // case VarDecl:
+                // case ArrDecl:
+                //     st_delete(n->attr.name, scope);
+                //     break;
                 case ParamVar:
                 case ParamArr:
                     st_delete(n->attr.name, scope+1);
@@ -184,8 +216,8 @@ static void delete_node(ASTNode * n) {
  * table by preorder traversal of the syntax tree
  */
 void build_symtab(ASTNode *syntaxTree) {
-    // traverse(syntaxTree, insert_node, delete_node);
-    traverse(syntaxTree, insert_node, null_proc);
+    traverse(syntaxTree, insert_node, delete_node);
+    // traverse(syntaxTree, insert_node, null_proc);
     if (TraceAnalyze) {
         fprintf(listing, "\nSymbol table:\n\n");
         print_symtab(listing);
@@ -210,14 +242,16 @@ static void check_node(ASTNode *n) {
                     }
                     break;
                 case FuncCall:
-                    node = st_lookup_node(n->attr.name, scope);
+                    node = st_lookup(n->attr.name, scope);
                     n->type = node->type;
                     ASTNode *tc = n->child[0];
                     ASTNode *td = node->child[0];
                     int nc = 0, nd = 0;
                     char *msg;
                     while (tc != NULL && td != NULL) {
-                        if (tc->type != td->type) {
+                        if ((tc->type != td->type) ||
+                            (td->kind.expr == ParamArr && tc->kind.expr != Arr) ||
+                            (td->kind.expr == ParamVar && tc->kind.expr == Arr)) {
                             asprintf(&msg, "argument '%s' of function '%s' must be '%s %s' instead of '%s %s'",
                                     td->attr.name, node->attr.name,
                                     type_str(td->type), var_type_str(td->kind.expr),
