@@ -110,9 +110,13 @@ const char* var_type_str(ExprKind kind) {
         case VarDecl:
         case Var:
             return "Var";
+        case ParamVar:
+            return "P Var";
         case ArrDecl:
         case Arr:
             return "Arr";
+        case ParamArr:
+            return "P Arr";
         case FuncDecl:
         case FuncCall:
             return "Func";

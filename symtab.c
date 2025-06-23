@@ -33,23 +33,21 @@ static BucketList *hashTable[SIZE];
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int lineno, int loc) {
-    int h = hash(name);
+void st_insert(ASTNode *node, int scope, int loc) {
+    int h = hash(node->attr.name);
     BucketList *l =  hashTable[h];
-    while ((l != NULL) && (strcmp(name, l->name) != 0) && l->scope == scope) l = l->next;
+    while ((l != NULL) && (strcmp(node->attr.name, l->node->attr.name) != 0) && l->scope == scope) l = l->next;
 
     if (l == NULL) { /* variable not yet in table */
         l = (BucketList *) malloc(sizeof(BucketList));
 
-        l->name = name;
-        l->var_type = var_type;
-        l->type = type;
+        l->node = node;
         l->scope = scope;
         l->active = true;
         l->memloc = loc;
 
         l->lines = (LineList *) malloc(sizeof(LineList));
-        l->lines->lineno = lineno;
+        l->lines->lineno = node->lineno;
         l->lines->next = NULL;
 
 
@@ -59,10 +57,40 @@ void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int line
         LineList *t = l->lines;
         while (t->next != NULL) t = t->next;
         t->next = (LineList *) malloc(sizeof(LineList));
-        t->next->lineno = lineno;
+        t->next->lineno = node->lineno;
         t->next->next = NULL;
     }
 }
+// void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int lineno, int loc) {
+//     int h = hash(name);
+//     BucketList *l =  hashTable[h];
+//     while ((l != NULL) && (strcmp(name, l->name) != 0) && l->scope == scope) l = l->next;
+
+//     if (l == NULL) { /* variable not yet in table */
+//         l = (BucketList *) malloc(sizeof(BucketList));
+
+//         l->name = name;
+//         l->var_type = var_type;
+//         l->type = type;
+//         l->scope = scope;
+//         l->active = true;
+//         l->memloc = loc;
+
+//         l->lines = (LineList *) malloc(sizeof(LineList));
+//         l->lines->lineno = lineno;
+//         l->lines->next = NULL;
+
+
+//         l->next = hashTable[h];
+//         hashTable[h] = l;
+//     } else { /* found in table, so just add line number */
+//         LineList *t = l->lines;
+//         while (t->next != NULL) t = t->next;
+//         t->next = (LineList *) malloc(sizeof(LineList));
+//         t->next->lineno = lineno;
+//         t->next->next = NULL;
+//     }
+// }
 
 /* Function st_lookup returns the memory
  * location of a variable or -1 if not found
@@ -70,22 +98,22 @@ void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int line
 int st_lookup(char *name, int scope) {
     int h = hash(name);
     BucketList *l =  hashTable[h];
-    while ((l != NULL) && (strcmp(name, l->name) != 0) && scope == l->scope) l = l->next;
+    while ((l != NULL) && (strcmp(name, l->node->attr.name) != 0) && scope == l->scope) l = l->next;
 
     if (l == NULL || !l->active) return -1;
     else return l->memloc;
 }
 
-/* Function st_lookup_type returns the type
- * of a variable or Void if not found
+/* Function st_lookup_node returns the ASTNode
+ * of a variable or NULL if not found
  */
-ExprType st_lookup_type(char *name, int scope) {
+ASTNode *st_lookup_node(char *name, int scope) {
     int h = hash(name);
     BucketList *l =  hashTable[h];
-    while ((l != NULL) && (strcmp(name, l->name) != 0) && scope == l->scope) l = l->next;
+    while ((l != NULL) && (strcmp(name, l->node->attr.name) != 0) && scope == l->scope) l = l->next;
 
-    if (l == NULL || !l->active) return -1;
-    else return l->type;
+    if (l == NULL || !l->active) return NULL;
+    else return l->node;
 }
 
 /* Function st_delete delete the last
@@ -94,7 +122,7 @@ ExprType st_lookup_type(char *name, int scope) {
 void st_delete(char *name, int scope) {
     int h = hash(name);
     BucketList *l = hashTable[h];
-    while ((l->next != NULL) && (strcmp(name, l->next->name) != 0) && scope == l->next->scope) l = l->next;
+    while ((l->next != NULL) && (strcmp(name, l->next->node->attr.name) != 0) && scope == l->next->scope) l = l->next;
 
     if (l->next == NULL) {
         fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
@@ -118,8 +146,8 @@ void free_symtab() {
  * list of the symbol table contents 
  */
 void print_symtab(FILE *listing) {
-    fprintf(listing, "Variable Name  Type  Var Type  Scope  Location   Line Numbers (Scope)\n");
-    fprintf(listing, "-------------  ----  --------  -----  --------   --------------------\n");
+    fprintf(listing, "Variable Name  Type  Var Type  Scope  Location   Line Numbers\n");
+    fprintf(listing, "-------------  ----  --------  -----  --------   ------------\n");
 
     for (int i=0; i < SIZE; i++) {
         if (hashTable[i] != NULL) {
@@ -129,9 +157,9 @@ void print_symtab(FILE *listing) {
                 if (!l->active) continue;
 
                 LineList *t = l->lines;
-                fprintf(listing, "%-13s  ", l->name);
-                fprintf(listing, "%-4s  ", type_str(l->type));
-                fprintf(listing, "%-8s  ", var_type_str(l->var_type));
+                fprintf(listing, "%-13s  ", l->node->attr.name);
+                fprintf(listing, "%-4s  ", type_str(l->node->type));
+                fprintf(listing, "%-8s  ", var_type_str(l->node->kind.expr));
                 fprintf(listing, "%-5d  ", l->scope);
                 fprintf(listing, "%-8d   ", l->memloc);
 

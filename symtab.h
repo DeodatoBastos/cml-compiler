@@ -19,12 +19,13 @@ typedef struct LineListRec {
  * it appears in the source code
  */
 typedef struct BucketListRec {
-    char *name;
     LineList *lines;
+    ASTNode *node;
     int scope;
     bool active;
-    ExprType type;
-    ExprKind var_type;
+    // char *name;
+    // ExprType type;
+    // ExprKind var_type;
     int memloc; /* memory location for variable */
     struct BucketListRec *next;
 } BucketList;
@@ -36,17 +37,18 @@ typedef struct BucketListRec {
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int lineno, int loc);
+// void st_insert(char *name, ExprKind var_type, ExprType type, int scope, int lineno, int loc);
+void st_insert(ASTNode *node, int scope, int loc);
 
 /* Function st_lookup returns the memory
  * location of a variable or -1 if not found
  */
 int st_lookup(char *name, int scope);
 
-/* Function st_lookup_type returns the type
- * of a variable or Void if not found
+/* Function st_lookup_node returns the ASTNode
+ * of a variable or NULL if not found
  */
-ExprType st_lookup_type(char *name, int scope);
+ASTNode *st_lookup_node(char *name, int scope);
 
 /* Function st_delete delete the last
  * entry with the given name
