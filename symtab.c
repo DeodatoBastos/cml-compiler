@@ -71,8 +71,8 @@ ASTNode *st_lookup(char *name, int scope) {
     BucketList *l =  hashTable[h];
     while ((l != NULL) && (strcmp(name, l->node->attr.name) != 0) && scope != l->scope) l = l->next;
 
-    if (l == NULL || !l->active) return NULL;
-    // if (l == NULL) return NULL;
+    // if (l == NULL || !l->active) return NULL;
+    if (l == NULL) return NULL;
     else return l->node;
 }
 
@@ -112,8 +112,6 @@ void print_symtab(FILE *listing) {
             BucketList *l = hashTable[i];
 
             while (l != NULL) {
-                // if (!l->active) continue;
-
                 LineList *t = l->lines;
                 fprintf(listing, "%-13s  ", l->node->attr.name);
                 fprintf(listing, "%-4s  ", type_str(l->node->type));
