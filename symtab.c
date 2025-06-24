@@ -36,7 +36,7 @@ static BucketList *hashTable[SIZE];
 void st_insert(ASTNode *node, int scope, int loc) {
     int h = hash(node->attr.name);
     BucketList *l =  hashTable[h];
-    while ((l != NULL) && (strcmp(node->attr.name, l->node->attr.name) != 0) && l->scope == scope) l = l->next;
+    while ((l != NULL) && ((strcmp(node->attr.name, l->node->attr.name) != 0) || l->scope != scope)) l = l->next;
 
     if (l == NULL) { /* variable not yet in table */
         l = (BucketList *) malloc(sizeof(BucketList));
@@ -50,10 +50,10 @@ void st_insert(ASTNode *node, int scope, int loc) {
         l->lines->lineno = node->lineno;
         l->lines->next = NULL;
 
-
         l->next = hashTable[h];
         hashTable[h] = l;
     } else { /* found in table, so just add line number */
+        l->active = true;
         LineList *t = l->lines;
         while (t->next != NULL) t = t->next;
         t->next = (LineList *) malloc(sizeof(LineList));
@@ -62,6 +62,13 @@ void st_insert(ASTNode *node, int scope, int loc) {
     }
 }
 
+void st_activate(char *name, int scope) {
+    int h = hash(name);
+    BucketList *l =  hashTable[h];
+    while ((l != NULL) && ((strcmp(name, l->node->attr.name) != 0) || scope != l->scope)) l = l->next;
+
+    if (l != NULL) l->active = true;
+}
 
 /* Function st_lookup returns the ASTNode
  * of a variable or NULL if not found
@@ -69,9 +76,21 @@ void st_insert(ASTNode *node, int scope, int loc) {
 ASTNode *st_lookup(char *name, int scope) {
     int h = hash(name);
     BucketList *l =  hashTable[h];
-    while ((l != NULL) && (strcmp(name, l->node->attr.name) != 0) && scope != l->scope) l = l->next;
+    while ((l != NULL) && (!l->active || (strcmp(name, l->node->attr.name) != 0) || scope != l->scope)) l = l->next;
 
-    // if (l == NULL || !l->active) return NULL;
+    if (l == NULL) return NULL;
+    else return l->node;
+}
+
+/* Function st_lookup_node returns the ASTNode
+ * of a variable or NULL if not found it searchs
+ * also for higher (closest to 0) scopes
+ */
+ASTNode *st_lookup_soft(char *name, int scope) {
+    int h = hash(name);
+    BucketList *l =  hashTable[h];
+    while ((l != NULL) && (!l->active || (strcmp(name, l->node->attr.name) != 0) || scope < l->scope)) l = l->next;
+
     if (l == NULL) return NULL;
     else return l->node;
 }
@@ -82,7 +101,7 @@ ASTNode *st_lookup(char *name, int scope) {
 void st_delete(char *name, int scope) {
     int h = hash(name);
     BucketList *l = hashTable[h];
-    while ((l != NULL) && (strcmp(name, l->node->attr.name) != 0) && scope != l->scope) l = l->next;
+    while ((l != NULL) && ((strcmp(name, l->node->attr.name) != 0) || scope != l->scope)) l = l->next;
 
     if (l == NULL) {
         fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);

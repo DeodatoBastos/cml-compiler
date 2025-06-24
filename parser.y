@@ -212,7 +212,7 @@ return_stmt: RETURN SEMICOLON {
 ;
 
 read_stmt: var ASSIGN READ LPAREN RPAREN SEMICOLON {
-            $$ = new_stmt_node(Read, $1->attr.name);
+            $$ = new_stmt_node(Read, NULL);
             $$->child[0] = $1;
          }
 ;

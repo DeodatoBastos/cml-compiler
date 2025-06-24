@@ -76,7 +76,7 @@ const char* node_kind_str(ASTNode* node) {
             case Return: return "Return";
             case Read: return "Read: ";
             case Write: return "Write";
-            case Assign: return "Assign to: ";
+            case Assign: return "Assign to:";
             default: return "Unknown StmtNode kind";
         }
     } else if (node->node_kind == Expr) {
@@ -87,7 +87,7 @@ const char* node_kind_str(ASTNode* node) {
             case ArrDecl: return "Array declaration: ";
             case Var: return "Var: ";
             case Arr: return "Array: ";
-            case ParamVar: return "Paarameter Var: ";
+            case ParamVar: return "Parameter Var: ";
             case ParamArr: return "Parameter Array: ";
             case FuncDecl: return "Function declaration: ";
             case FuncCall: return "Function call: ";
@@ -130,7 +130,7 @@ void print_tree(ASTNode *node, int depth) {
         fprintf(listing, "%s", node_kind_str(node));
 
         if(node->node_kind == Stmt) {
-            if(node->kind.stmt == Read || node->kind.stmt == Assign) {
+            if(node->kind.stmt == Read) {
                 fprintf(listing, "%s\n", node->attr.name);
             } else {
                 fprintf(listing, "\n");
@@ -198,7 +198,7 @@ void print_token(TokenType token, const char* tokenString) {
         case LT: fprintf(listing, "<\n"); break;
         case GT: fprintf(listing, ">\n"); break;
         case GE: fprintf(listing, ">=\n"); break;
-        case EQ: fprintf(listing, "=\n"); break;
+        case EQ: fprintf(listing, "==\n"); break;
         case NE: fprintf(listing, "!=\n"); break;
 
         case LPAREN: fprintf(listing, "(\n"); break;
@@ -215,38 +215,22 @@ void print_token(TokenType token, const char* tokenString) {
         case SUB: fprintf(listing, "-\n"); break;
         case MUL: fprintf(listing, "*\n"); break;
         case DIV: fprintf(listing, "/\n"); break;
-        case MOD: fprintf(listing, "/\n"); break;
+        case MOD: fprintf(listing, "%%\n"); break;
 
         case ENDFILE: fprintf(listing, "EOF\n"); break;
         case NUM:
-              fprintf(listing, "NUM, val = %s\n",tokenString);
+              fprintf(listing, "NUM, val = %s\n", tokenString);
               break;
         case ID:
-              fprintf(listing, "ID, name = %s\n",tokenString);
+              fprintf(listing, "ID, name = %s\n", tokenString);
               break;
         case ERROR:
-              fprintf(listing, "ERROR: %s\n",tokenString);
+              fprintf(listing, "ERROR: %s\n", tokenString);
               break;
 
         default:
-            fprintf(listing, "Unknown token: %d\n",token);
+            fprintf(listing, "Unknown token: %d\n", token);
     }
-}
-
-char * copy_str(char *s) {
-    int n;
-    char * t;
-    if (s==NULL)
-        return NULL;
-
-    n = strlen(s)+1;
-    t = malloc(n);
-
-    if (t==NULL)
-        fprintf(listing, "Out of memory error at line %d\n", lineno);
-    else strcpy(t,s);
-
-    return t;
 }
 
 void print_help(const char *program_name) {
