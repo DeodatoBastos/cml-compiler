@@ -9,6 +9,7 @@ TokenType get_token(void);
 
 char tokenString[MAXTOKENLEN+1];
 
+// %option yylineno
 %}
 
 %option noyywrap
@@ -57,7 +58,11 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 "="                              { return ASSIGN; }
 
 "//".*                          { /* skip comment */ }
-"/*"([^*]|\*+[^*/])*"*"+"/"     { /* ignore multi-line comment */ }
+"/*"([^*]|\*+[^*/])*"*"+"/"     { /* ignore multi-line comment */
+                                    for (char *p = yytext; *p; p++) {
+                                        if (*p == '\n') lineno++;
+                                    }
+                                }
 [ \t\r]+                        { /* skip whitespace */ }
 
 \n                              { lineno++; }
@@ -80,7 +85,7 @@ TokenType get_token(void) {
         yyout = listing;
     }
     currentToken = yylex();
-    // strncpy(tokenString, yytext, MAXTOKENLEN);
+    strncpy(tokenString, yytext, MAXTOKENLEN);
     if (TraceScan) {
         fprintf(listing, "\t%d: ", lineno);
         print_token(currentToken, yytext);

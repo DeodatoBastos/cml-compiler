@@ -14,7 +14,6 @@ int yyerror(const char *s);
 static int yylex();
 
 static ASTNode *root;
-// static char *savedName; /* for use in assignments */
 // static int savedLineNo;  /* ditto */
 
 %}
