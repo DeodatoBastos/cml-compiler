@@ -18,11 +18,20 @@ ASTNode *new_expr_node(ExprKind expr_kind, const char *name);
  */
 ASTNode *get_return_node(ASTNode* node);
 
+/* Procedure type_str gets the string type
+ * of the enum
+ */
+const char* type_str(ExprType type);
+
+/* Procedure var_type_str gets the string variabletype
+ * type of the enum
+ */
+const char* var_type_str(ExprKind kind);
+
 /* procedure print_tree prints a syntax tree to the 
  * listing file using indentation to indicate subtrees
  */
 void print_tree(ASTNode *node, int depth);
-
 
 /* procedure free_ast frees all memory associated with the
  * ast
@@ -35,16 +44,9 @@ void free_ast(ASTNode *node);
 void print_token(TokenType, const char*);
 
 
-/* Procedure type_str gets the string type
- * of the enum
+/* Procedure print_help prints a help
+ * message for the main program
  */
-const char* type_str(ExprType type);
-
-/* Procedure var_type_str gets the string variabletype
- * type of the enum
- */
-const char* var_type_str(ExprKind kind);
-
 void print_help(const char *program_name);
 
 #endif

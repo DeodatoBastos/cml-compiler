@@ -72,11 +72,13 @@ int main(int argc, char **argv) {
     listing = stdout;
     fprintf(listing, "C- COMPILATION: %s\n", argv[1]);
 
-    ASTNode *syntaxTree;
-    syntaxTree = parse();
-    if (TraceParse) {
-        fprintf(listing, "\nSyntax tree:\n");
-        print_tree(syntaxTree, 0);
+    ASTNode *syntaxTree = NULL;
+    if (!Error) {
+        syntaxTree = parse();
+        if (TraceParse) {
+            fprintf(listing, "\nSyntax tree:\n");
+            print_tree(syntaxTree, 0);
+        }
     }
 
     if (!Error) {

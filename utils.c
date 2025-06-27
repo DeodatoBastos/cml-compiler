@@ -5,6 +5,9 @@
 #include "global.h"
 #include "utils.h"
 
+/* Function new_stmt_node creates a new statement
+ * node for syntax tree construction
+ */
 ASTNode *new_stmt_node(StmtKind kind, const char *name) {
     ASTNode * n = (ASTNode *) malloc(sizeof(ASTNode));
     if (n == NULL) {
@@ -24,6 +27,9 @@ ASTNode *new_stmt_node(StmtKind kind, const char *name) {
     return n;
 }
 
+/* Function new_exp_node creates a new expression 
+ * node for syntax tree construction
+ */
 ASTNode *new_expr_node(ExprKind kind, const char *name) {
     ASTNode * n = (ASTNode *) malloc(sizeof(ASTNode));
     if (n == NULL) {
@@ -43,6 +49,9 @@ ASTNode *new_expr_node(ExprKind kind, const char *name) {
     return n;
 }
 
+/* procedure get_return_node gets the return node associated
+ * to a function to verify if it respects the type definition
+ */
 ASTNode *get_return_node(ASTNode* node) {
     ASTNode *r = NULL;
     if (node == NULL) return r;
@@ -96,6 +105,9 @@ const char* node_kind_str(ASTNode* node) {
     } else return "Unkown node kind";
 }
 
+/* Procedure type_str gets the string type
+ * of the enum
+ */
 const char* type_str(ExprType type) {
     switch (type) {
         case Void: return "void";
@@ -105,6 +117,9 @@ const char* type_str(ExprType type) {
     }
 }
 
+/* Procedure var_type_str gets the string variabletype
+ * type of the enum
+ */
 const char* var_type_str(ExprKind kind) {
     switch (kind) {
         case VarDecl:
@@ -120,10 +135,13 @@ const char* var_type_str(ExprKind kind) {
         case FuncDecl:
         case FuncCall:
             return "Func";
-        default: return "unkown type";
+        default: return "unkown var type";
     }
 }
 
+/* procedure print_tree prints a syntax tree to the 
+ * listing file using indentation to indicate subtrees
+ */
 void print_tree(ASTNode *node, int depth) {
     while(node != NULL) {
         print_indent(depth);
@@ -160,6 +178,9 @@ void print_tree(ASTNode *node, int depth) {
     }
 }
 
+/* procedure free_ast frees all memory associated with the
+ * ast
+ */
 void free_ast(ASTNode *node) {
     if (!node) return;
 
@@ -180,6 +201,9 @@ void free_ast(ASTNode *node) {
     free(node);
 }
 
+/* Procedure print_token prints a token 
+ * and its lexeme to the listing file
+ */
 void print_token(TokenType token, const char* tokenString) {
     switch (token) {
         case WRITE:
@@ -233,6 +257,9 @@ void print_token(TokenType token, const char* tokenString) {
     }
 }
 
+/* Procedure print_help prints a help
+ * message for the main program
+ */
 void print_help(const char *program_name) {
     printf("Usage: %s [file]\n", program_name);
     printf("Options:\n");
