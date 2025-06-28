@@ -283,7 +283,7 @@ static void check_node(ASTNode *n) {
                         type_error(n->child[0], "while test is not Boolean");
                     break;
                 case Assign:
-                    if (n->child[0]->type != Integer)
+                    if (n->child[1]->type != Integer)
                         type_error(n->child[1], "assignment of non-integer value");
                     break;
                 case Write:

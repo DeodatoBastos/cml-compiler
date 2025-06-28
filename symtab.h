@@ -13,7 +13,7 @@ typedef struct LineListRec {
 } LineList;
 
 /* The record in the bucket lists for
- * each variable, including name, 
+ * each variable, including name,
  * assigned memory location, and
  * the list of line numbers in which
  * it appears in the source code
@@ -61,8 +61,8 @@ void st_delete(char *name, int scope);
  */
 void free_symtab();
 
-/* Procedure printSymTab prints a formatted 
- * list of the symbol table contents 
+/* Procedure printSymTab prints a formatted
+ * list of the symbol table contents
  */
 void print_symtab(FILE *listing);
 
