@@ -79,7 +79,7 @@ static void insert_node(ASTNode * n) {
                 BucketList *bucket;
                 case VarDecl:
                 case ArrDecl:
-                    bucket = st_lookup_soft(n->attr.name, stack);
+                    bucket = st_lookup_soft(n->attr.name);
                     if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
                         st_insert(n, stack_top(stack), location++);
@@ -109,7 +109,7 @@ static void insert_node(ASTNode * n) {
                 case Var:
                 case Arr:
                 case FuncCall:
-                    bucket = st_lookup_soft(n->attr.name, stack);
+                    bucket = st_lookup_soft(n->attr.name);
                     if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
                         var_error(n, var_type_str(n->kind.expr), "never defined used", stack_top(stack));
@@ -255,7 +255,7 @@ static void check_node(ASTNode *n) {
                         type_error(n, "declaration of non-integer variable");
                     break;
                 case Var:
-                    bucket = st_lookup_soft(n->attr.name, stack);
+                    bucket = st_lookup_soft(n->attr.name);
                     if (bucket == NULL) break;
 
                     node = bucket->node;
@@ -279,7 +279,7 @@ static void check_node(ASTNode *n) {
                     delete_decls(n->child[0]);
                     break;
                 case FuncCall:
-                    bucket = st_lookup_soft(n->attr.name, stack);
+                    bucket = st_lookup_soft(n->attr.name);
                     if (bucket == NULL) break;
 
                     node = bucket->node;

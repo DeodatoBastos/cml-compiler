@@ -50,7 +50,7 @@ ASTNode *st_lookup(char *name, int scope);
  * of a variable or NULL if not found it searchs
  * also for higher (closest to 0) scopes
  */
-BucketList *st_lookup_soft(char *name, Stack *stack);
+BucketList *st_lookup_soft(char *name);
 
 /* Function st_delete delete the last
  * entry with the given name

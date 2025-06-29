@@ -88,11 +88,9 @@ ASTNode *st_lookup(char *name, int scope) {
  * of a variable or NULL if not found it searchs
  * also for higher (closest to 0) scopes
  */
-BucketList *st_lookup_soft(char *name, Stack *stack) {
+BucketList *st_lookup_soft(char *name) {
     int h = hash(name);
     BucketList *l =  hashTable[h];
-    // use the stack
-    // while ((l != NULL) && (!l->active || (strcmp(name, l->node->attr.name) != 0) || depth < l->depth || lin < l->lines->lineno)) l = l->next;
     while ((l != NULL) && (!l->active || (strcmp(name, l->node->attr.name) != 0))) l = l->next;
 
     if (l == NULL) return NULL;
