@@ -79,6 +79,20 @@ static void insert_node(ASTNode * n) {
                 BucketList *bucket;
                 case VarDecl:
                 case ArrDecl:
+                    bucket = st_lookup_soft(n->attr.name, stack);
+                    if (bucket == NULL)
+                        /* not yet in table, so treat as new definition */
+                        st_insert(n, stack_top(stack), location++);
+                    else if (bucket->node->kind.expr == FuncDecl)
+                        /* function defined with the same name raise an error */
+                        var_error(n, var_type_str(n->kind.expr), "has the name of a function already declared", stack_top(stack));
+                    else if (bucket->scope != stack_top(stack))
+                        /* not yet in table, so treat as new definition */
+                        st_insert(n, stack_top(stack), location++);
+                    else
+                        /* already in table raise an error */
+                        var_error(n, var_type_str(n->kind.expr), "redefined", stack_top(stack));
+                    break;
                 case FuncDecl:
                     if (st_lookup(n->attr.name, stack_top(stack)) == NULL)
                         /* not yet in table, so treat as new definition */
@@ -182,6 +196,10 @@ void build_symtab(ASTNode *syntaxTree) {
         print_symtab(listing);
     }
     stack_destroy(stack);
+    if (st_lookup("main", 0) == NULL) {
+        fprintf(listing, "Error: main function not found");
+        Error = true;
+    }
 }
 
 /* Procedure activate_node activates 
@@ -230,23 +248,41 @@ static void check_node(ASTNode *n) {
         case Expr:
             switch (n->kind.expr) {
                 ASTNode *node;
+                BucketList *bucket;
+                case VarDecl:
+                case ArrDecl:
+                    if (n->type != Integer)
+                        type_error(n, "declaration of non-integer variable");
+                    break;
                 case Var:
-                    node = st_lookup_soft(n->attr.name, stack)->node;
-                    n->kind.expr = node->kind.expr == ArrDecl ? Arr : Var;
+                    bucket = st_lookup_soft(n->attr.name, stack);
+                    if (bucket == NULL) break;
+
+                    node = bucket->node;
+                    n->kind.expr = (node->kind.expr == ArrDecl) || (node->kind.expr == ParamArr) ? Arr : Var;
                     break;
                 case FuncDecl:
                     if (n->type != Void) {
+                        char *msg;
                         node = get_return_node(n->child[1]);
-                        if (node == NULL)
-                            type_error(n, "return stmt not found");
-                        else if (n->type != node->type)
-                            type_error(node, "return type must be the same type as the function definition");
+                        if (node == NULL) {
+                            asprintf(&msg, "return stmt not found for the integer function '%s'", n->attr.name);
+                            type_error(n, msg);
+                            free(msg);
+                        }
+                        else if (n->type != node->type) {
+                            asprintf(&msg, "return type of function '%s' must be integer", n->attr.name);
+                            type_error(node, msg);
+                        }
                     }
                     // pass for all the nodes and check if it is ParamArr or ParamVar
                     delete_decls(n->child[0]);
                     break;
                 case FuncCall:
-                    node = st_lookup_soft(n->attr.name, stack)->node;
+                    bucket = st_lookup_soft(n->attr.name, stack);
+                    if (bucket == NULL) break;
+
+                    node = bucket->node;
                     n->type = node->type;
                     ASTNode *tc = n->child[0];
                     ASTNode *td = node->child[0];
