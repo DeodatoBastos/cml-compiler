@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "stack.h"
 #include "utils.h"
 #include "global.h"
 #include "symtab.h"
@@ -9,7 +10,15 @@
 
 /* counter for variable memory locations */
 static int location = 0;
+
+/* counter for variables scopes */
 static int scope = 0;
+
+/* cache used to delete Parameters */
+static int last_scope;
+
+/* stack to store scopes */
+Stack* stack;
 
 static void type_error(ASTNode *n, char *message) {
     fprintf(listing, "Type error at line %d: %s\n", n->lineno, message);
@@ -45,7 +54,7 @@ static void traverse(ASTNode *n,
  * traversals from traverse
  */
 static void null_proc(ASTNode * n) {
-    if (n==NULL) return;
+    if (n == NULL) return;
     else return;
 }
 
@@ -59,6 +68,7 @@ static void insert_node(ASTNode * n) {
             switch (n->kind.stmt) {
                 case Compound:
                     scope++;
+                    stack_push(stack, scope);
                     break;
                 default:
                     break;
@@ -66,67 +76,34 @@ static void insert_node(ASTNode * n) {
             break;
         case Expr:
             switch (n->kind.expr) {
+                BucketList *bucket;
                 case VarDecl:
                 case ArrDecl:
                 case FuncDecl:
-                    if (st_lookup(n->attr.name, scope) == NULL)
+                    if (st_lookup(n->attr.name, stack_top(stack)) == NULL)
                         /* not yet in table, so treat as new definition */
-                        st_insert(n, scope, location++);
+                        st_insert(n, stack_top(stack), location++);
                     else
                         /* already in table raise an error */
-                        var_error(n, var_type_str(n->kind.expr), "redefined", scope);
+                        var_error(n, var_type_str(n->kind.expr), "redefined", stack_top(stack));
                     break;
                 case ParamVar:
                 case ParamArr:
-                        // /* not yet in table, so treat as new definition */
-                        st_insert(n, scope+1, location++);
+                        /* not yet in table, so treat as new definition */
+                        st_insert(n, scope+1, location++); // parameters are defined before entering a new scope
                     break;
                 case Var:
                 case Arr:
                 case FuncCall:
-                    if (st_lookup_soft(n->attr.name, scope) == NULL)
+                    bucket = st_lookup_soft(n->attr.name, stack);
+                    if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
-                        var_error(n, var_type_str(n->kind.expr), "never defined used", scope);
+                        var_error(n, var_type_str(n->kind.expr), "never defined used", stack_top(stack));
                     else
                         /* already in table, so ignore location,
                          add line number of use only */
-                        st_insert(n, scope, 0);
+                        st_insert(n, bucket->scope, 0);
                     break;
-                default:
-                    break;
-            }
-            break;
-        default:
-            break;
-    }
-}
-
-/* Procedure activate_node activates 
- * identifiers stored in n into
- * the symbol table
- */
-static void activate_node(ASTNode * n) {
-    switch (n->node_kind) {
-        case Stmt:
-            switch (n->kind.stmt) {
-                case Compound:
-                    scope++;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case Expr:
-            switch (n->kind.expr) {
-                case VarDecl:
-                case ArrDecl:
-                case FuncDecl:
-                        st_activate(n->attr.name, scope);
-                        break;
-                case ParamVar:
-                case ParamArr:
-                        st_activate(n->attr.name, scope+1);
-                        break;
                 default:
                     break;
             }
@@ -146,11 +123,11 @@ static void delete_decls(ASTNode *n) {
             case FuncDecl:
             case VarDecl:
             case ArrDecl:
-                st_delete(n->attr.name, scope);
+                st_delete(n->attr.name, stack_top(stack));
                 break;
             case ParamVar:
             case ParamArr:
-                st_delete(n->attr.name, scope+1);
+                st_delete(n->attr.name, last_scope);
                 break;
             default:
                 break;
@@ -158,7 +135,6 @@ static void delete_decls(ASTNode *n) {
     }
 
 }
-
 
 /* Procedure delete_node deletes
  * identifiers stored in n into
@@ -171,7 +147,8 @@ static void delete_node(ASTNode * n) {
                 case Compound:
                     // pass for all the nodes and check if it is FuncDecl or VarDecl or ArrDecl
                     delete_decls(n->child[0]);
-                    scope--;
+                    last_scope = stack_top(stack);
+                    stack_pop(stack);
                     break;
                 default:
                     break;
@@ -196,12 +173,53 @@ static void delete_node(ASTNode * n) {
  * table by preorder traversal of the syntax tree
  */
 void build_symtab(ASTNode *syntaxTree) {
+    stack = stack_create();
+    scope = 0;
+    stack_push(stack, 0);
     traverse(syntaxTree, insert_node, delete_node);
     if (TraceAnalyze) {
         fprintf(listing, "\nSymbol table:\n\n");
         print_symtab(listing);
     }
+    stack_destroy(stack);
 }
+
+/* Procedure activate_node activates 
+ * identifiers stored in n into
+ * the symbol table
+ */
+static void activate_node(ASTNode * n) {
+    switch (n->node_kind) {
+        case Stmt:
+            switch (n->kind.stmt) {
+                case Compound:
+                    scope++;
+                    stack_push(stack, scope);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case Expr:
+            switch (n->kind.expr) {
+                case VarDecl:
+                case ArrDecl:
+                case FuncDecl:
+                        st_activate(n->attr.name, stack_top(stack));
+                        break;
+                case ParamVar:
+                case ParamArr:
+                        st_activate(n->attr.name, scope+1); // how to deactive it?
+                        break;
+                default:
+                    break;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 
 /* Procedure check_node performs
  * type checking at a single tree node
@@ -213,7 +231,7 @@ static void check_node(ASTNode *n) {
             switch (n->kind.expr) {
                 ASTNode *node;
                 case Var:
-                    node = st_lookup_soft(n->attr.name, scope);
+                    node = st_lookup_soft(n->attr.name, stack)->node;
                     n->kind.expr = node->kind.expr == ArrDecl ? Arr : Var;
                     break;
                 case FuncDecl:
@@ -224,9 +242,11 @@ static void check_node(ASTNode *n) {
                         else if (n->type != node->type)
                             type_error(node, "return type must be the same type as the function definition");
                     }
+                    // pass for all the nodes and check if it is ParamArr or ParamVar
+                    delete_decls(n->child[0]);
                     break;
                 case FuncCall:
-                    node = st_lookup_soft(n->attr.name, scope);
+                    node = st_lookup_soft(n->attr.name, stack)->node;
                     n->type = node->type;
                     ASTNode *tc = n->child[0];
                     ASTNode *td = node->child[0];
@@ -293,7 +313,8 @@ static void check_node(ASTNode *n) {
                 case Compound:
                     // pass for all the nodes and check if it is FuncDecl or VarDecl or ArrDecl
                     delete_decls(n->child[0]);
-                    scope--;
+                    last_scope = stack_top(stack);
+                    stack_pop(stack);
                     break;
                 default:
                     break;
@@ -308,5 +329,9 @@ static void check_node(ASTNode *n) {
  * by a postorder syntax tree traversal
  */
 void type_check(ASTNode * syntaxTree) {
+    stack = stack_create();
+    scope = 0;
+    stack_push(stack, scope);
     traverse(syntaxTree, activate_node, check_node);
+    stack_destroy(stack);
 }

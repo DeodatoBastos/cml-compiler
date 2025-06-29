@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "ast.h"
+#include "stack.h"
 
 /* the list of line numbers of the source
  * code in which a variable is referenced
@@ -49,7 +50,7 @@ ASTNode *st_lookup(char *name, int scope);
  * of a variable or NULL if not found it searchs
  * also for higher (closest to 0) scopes
  */
-ASTNode *st_lookup_soft(char *name, int scope);
+BucketList *st_lookup_soft(char *name, Stack *stack);
 
 /* Function st_delete delete the last
  * entry with the given name
