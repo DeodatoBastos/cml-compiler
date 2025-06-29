@@ -21,12 +21,12 @@ static int last_scope;
 Stack* stack;
 
 static void type_error(ASTNode *n, char *message) {
-    fprintf(listing, "Type error at line %d: %s\n", n->lineno, message);
+    fprintf(listing, "\033[1;31mType Error\033 at line %d: %s\n", n->lineno, message);
     Error = true;
 }
 
 static void var_error(ASTNode *n, const char *var_type, char *msg, int scope) {
-    fprintf(listing, "Var error: %s '%s' %s at line %d and scope %d\n", var_type, n->attr.name, msg, n->lineno, scope);
+    fprintf(listing, "\033[1;31mVar Error\033: %s '%s' %s at line %d and scope %d\n", var_type, n->attr.name, msg, n->lineno, scope);
     Error = true;
 }
 
@@ -197,7 +197,7 @@ void build_symtab(ASTNode *syntaxTree) {
     }
     stack_destroy(stack);
     if (st_lookup("main", 0) == NULL) {
-        fprintf(listing, "Error: main function not found");
+        fprintf(listing, "\033[1;Error\033: main function not found");
         Error = true;
     }
 }
