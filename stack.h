@@ -5,20 +5,20 @@
 
 typedef struct stack Stack;
 
-Stack *stack_create();
+Stack *s_create();
 
-void stack_destroy(Stack *stack);
+void s_destroy(Stack *stack);
 
-bool stack_isEmpty(const Stack *stack);
+bool s_isEmpty(const Stack *stack);
 
-int stack_top(const Stack *stack);
+int s_top(const Stack *stack);
 
-int stack_size(const Stack *stack);
+int s_size(const Stack *stack);
 
-void stack_push(Stack *stack, int element);
+void s_push(Stack *stack, int element);
 
-void stack_pop(Stack *stack);
+void s_pop(Stack *stack);
 
-void stack_printTopDown(Stack *stack);
+void s_printTopDown(Stack *stack);
 
 #endif // STACK_H

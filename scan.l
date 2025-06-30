@@ -68,7 +68,7 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 \n                              { lineno++; }
 
 .                               {
-                                    fprintf(stderr, "\033[1;31mLexical Error\033 at line %d:[0m Unknown character: '%s'\n", lineno, yytext);
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", lineno, yytext);
                                     Error = true;
                                     return ERROR;
                                 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include "ast.h"
 #include "global.h"
+#include "queue.h"
 #include "utils.h"
 
 /* Function new_stmt_node creates a new statement
@@ -52,22 +53,18 @@ ASTNode *new_expr_node(ExprKind kind, const char *name) {
 /* procedure get_return_node gets the return node associated
  * to a function to verify if it respects the type definition
  */
-ASTNode *get_return_node(ASTNode* node) {
-    ASTNode *r = NULL;
-    if (node == NULL) return r;
+void get_return_nodes(ASTNode* node, Queue* q) {
+    if (node == NULL) return;
 
-    for (int i = 0; i < MAXCHILDREN; i++) {
-        if (r == NULL)
-            r = get_return_node(node->child[i]);
-    }
+    for (int i = 0; i < MAXCHILDREN; i++)
+        get_return_nodes(node->child[i], q);
 
-    if (r == NULL)
-        r = get_return_node(node->sibling);
+    get_return_nodes(node->sibling, q);
 
     if (node->node_kind == Stmt && node->kind.stmt == Return)
-        r = node;
+        q_push(q, node);
 
-    return r;
+    return;
 }
 
 void print_indent(int depth) {

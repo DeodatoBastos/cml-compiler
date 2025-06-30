@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "queue.h"
 #include "stack.h"
 #include "utils.h"
 #include "global.h"
@@ -21,12 +22,12 @@ static int last_scope;
 Stack* stack;
 
 static void type_error(ASTNode *n, char *message) {
-    fprintf(listing, "\033[1;31mType Error\033 at line %d: %s\n", n->lineno, message);
+    fprintf(listing, "\033[1;31mType Error\033[0m at line %d: %s\n", n->lineno, message);
     Error = true;
 }
 
 static void var_error(ASTNode *n, const char *var_type, char *msg, int scope) {
-    fprintf(listing, "\033[1;31mVar Error\033: %s '%s' %s at line %d and scope %d\n", var_type, n->attr.name, msg, n->lineno, scope);
+    fprintf(listing, "\033[1;31mVar Error\033[0m: %s '%s' %s at line %d and scope %d\n", var_type, n->attr.name, msg, n->lineno, scope);
     Error = true;
 }
 
@@ -68,7 +69,7 @@ static void insert_node(ASTNode * n) {
             switch (n->kind.stmt) {
                 case Compound:
                     scope++;
-                    stack_push(stack, scope);
+                    s_push(stack, scope);
                     break;
                 default:
                     break;
@@ -82,24 +83,24 @@ static void insert_node(ASTNode * n) {
                     bucket = st_lookup_soft(n->attr.name);
                     if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
-                        st_insert(n, stack_top(stack), location++);
+                        st_insert(n, s_top(stack), location++);
                     else if (bucket->node->kind.expr == FuncDecl)
                         /* function defined with the same name raise an error */
-                        var_error(n, var_type_str(n->kind.expr), "has the name of a function already declared", stack_top(stack));
-                    else if (bucket->scope != stack_top(stack))
+                        var_error(n, var_type_str(n->kind.expr), "has the name of a function already declared", s_top(stack));
+                    else if (bucket->scope != s_top(stack))
                         /* not yet in table, so treat as new definition */
-                        st_insert(n, stack_top(stack), location++);
+                        st_insert(n, s_top(stack), location++);
                     else
                         /* already in table raise an error */
-                        var_error(n, var_type_str(n->kind.expr), "redefined", stack_top(stack));
+                        var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
                     break;
                 case FuncDecl:
-                    if (st_lookup(n->attr.name, stack_top(stack)) == NULL)
+                    if (st_lookup(n->attr.name, s_top(stack)) == NULL)
                         /* not yet in table, so treat as new definition */
-                        st_insert(n, stack_top(stack), location++);
+                        st_insert(n, s_top(stack), location++);
                     else
                         /* already in table raise an error */
-                        var_error(n, var_type_str(n->kind.expr), "redefined", stack_top(stack));
+                        var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
                     break;
                 case ParamVar:
                 case ParamArr:
@@ -112,7 +113,7 @@ static void insert_node(ASTNode * n) {
                     bucket = st_lookup_soft(n->attr.name);
                     if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
-                        var_error(n, var_type_str(n->kind.expr), "never defined used", stack_top(stack));
+                        var_error(n, var_type_str(n->kind.expr), "never defined used", s_top(stack));
                     else
                         /* already in table, so ignore location,
                          add line number of use only */
@@ -137,7 +138,7 @@ static void delete_decls(ASTNode *n) {
             case FuncDecl:
             case VarDecl:
             case ArrDecl:
-                st_delete(n->attr.name, stack_top(stack));
+                st_delete(n->attr.name, s_top(stack));
                 break;
             case ParamVar:
             case ParamArr:
@@ -161,8 +162,8 @@ static void delete_node(ASTNode * n) {
                 case Compound:
                     // pass for all the nodes and check if it is FuncDecl or VarDecl or ArrDecl
                     delete_decls(n->child[0]);
-                    last_scope = stack_top(stack);
-                    stack_pop(stack);
+                    last_scope = s_top(stack);
+                    s_pop(stack);
                     break;
                 default:
                     break;
@@ -187,15 +188,15 @@ static void delete_node(ASTNode * n) {
  * table by preorder traversal of the syntax tree
  */
 void build_symtab(ASTNode *syntaxTree) {
-    stack = stack_create();
+    stack = s_create();
     scope = 0;
-    stack_push(stack, 0);
+    s_push(stack, 0);
     traverse(syntaxTree, insert_node, delete_node);
     if (TraceAnalyze) {
         fprintf(listing, "\nSymbol table:\n\n");
         print_symtab(listing);
     }
-    stack_destroy(stack);
+    s_destroy(stack);
     if (st_lookup("main", 0) == NULL) {
         fprintf(listing, "\033[1;Error\033: main function not found");
         Error = true;
@@ -212,7 +213,7 @@ static void activate_node(ASTNode * n) {
             switch (n->kind.stmt) {
                 case Compound:
                     scope++;
-                    stack_push(stack, scope);
+                    s_push(stack, scope);
                     break;
                 default:
                     break;
@@ -223,7 +224,7 @@ static void activate_node(ASTNode * n) {
                 case VarDecl:
                 case ArrDecl:
                 case FuncDecl:
-                        st_activate(n->attr.name, stack_top(stack));
+                        st_activate(n->attr.name, s_top(stack));
                         break;
                 case ParamVar:
                 case ParamArr:
@@ -264,16 +265,22 @@ static void check_node(ASTNode *n) {
                 case FuncDecl:
                     if (n->type != Void) {
                         char *msg;
-                        node = get_return_node(n->child[1]);
-                        if (node == NULL) {
-                            asprintf(&msg, "return stmt not found for the integer function '%s'", n->attr.name);
-                            type_error(n, msg);
-                            free(msg);
+                        Queue *q = q_create();
+                        get_return_nodes(n->child[1], q);
+                        while (!q_isEmpty(q)) {
+                            node = q_front(q);
+                            if (node == NULL) {
+                                asprintf(&msg, "return stmt not found for the integer function '%s'", n->attr.name);
+                                type_error(n, msg);
+                                free(msg);
+                            }
+                            else if (n->type != node->type) {
+                                asprintf(&msg, "return type of function '%s' must be integer", n->attr.name);
+                                type_error(node, msg);
+                            }
+                            q_pop(q);
                         }
-                        else if (n->type != node->type) {
-                            asprintf(&msg, "return type of function '%s' must be integer", n->attr.name);
-                            type_error(node, msg);
-                        }
+                        q_destroy(q);
                     }
                     // pass for all the nodes and check if it is ParamArr or ParamVar
                     delete_decls(n->child[0]);
@@ -349,8 +356,8 @@ static void check_node(ASTNode *n) {
                 case Compound:
                     // pass for all the nodes and check if it is FuncDecl or VarDecl or ArrDecl
                     delete_decls(n->child[0]);
-                    last_scope = stack_top(stack);
-                    stack_pop(stack);
+                    last_scope = s_top(stack);
+                    s_pop(stack);
                     break;
                 default:
                     break;
@@ -365,9 +372,9 @@ static void check_node(ASTNode *n) {
  * by a postorder syntax tree traversal
  */
 void type_check(ASTNode * syntaxTree) {
-    stack = stack_create();
+    stack = s_create();
     scope = 0;
-    stack_push(stack, scope);
+    s_push(stack, scope);
     traverse(syntaxTree, activate_node, check_node);
-    stack_destroy(stack);
+    s_destroy(stack);
 }

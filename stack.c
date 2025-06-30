@@ -1,48 +1,43 @@
+#include "stack.h"
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-#include "stack.h"
 
-typedef struct node StackNode;
+typedef struct node SNode;
 
 struct stack {
-    StackNode *top;
+    SNode *top;
     int size;
 };
 
 struct node {
-    StackNode *below;
+    SNode *below;
     int element;
 };
 
-
-Stack *stack_create() {
+Stack *s_create() {
     Stack *stack;
-    stack = (Stack*) malloc(sizeof(Stack));
+    stack = (Stack *)malloc(sizeof(Stack));
     assert(stack != NULL);
     stack->top = NULL;
     stack->size = 0;
     return stack;
 }
 
-void stack_destroy(Stack *stack) {
+void s_destroy(Stack *stack) {
     while (stack->top != NULL) {
-        stack_pop(stack);
+        s_pop(stack);
     }
     free(stack);
 }
 
-bool stack_isEmpty(const Stack *stack) {
-    return stack->size == 0;
-}
+bool s_isEmpty(const Stack *stack) { return stack->size == 0; }
 
-int stack_top(const Stack *stack) {
-    return stack->top->element;
-}
+int s_top(const Stack *stack) { return stack->top->element; }
 
-void stack_push(Stack *stack, int element) {
-    StackNode *newNode;
-    newNode = (StackNode*) malloc(sizeof(StackNode));
+void s_push(Stack *stack, int element) {
+    SNode *newNode;
+    newNode = (SNode *)malloc(sizeof(SNode));
     assert(newNode != NULL);
 
     newNode->element = element;
@@ -51,32 +46,33 @@ void stack_push(Stack *stack, int element) {
     stack->size++;
 }
 
-void stack_pop(Stack *stack) {
-    if (stack->top == NULL) return;
+void s_pop(Stack *stack) {
+    if (stack->top == NULL)
+        return;
 
-    StackNode *auxNode;
+    SNode *auxNode;
     auxNode = stack->top;
     stack->top = stack->top->below;
     stack->size--;
     free(auxNode);
 }
 
-void stack_printTopDown(Stack *stack) {
+void s_printTopDown(Stack *stack) {
     printf("Stack (%d): ", stack->size);
     Stack *auxStack;
-    auxStack = stack_create();
+    auxStack = s_create();
 
-    while (!stack_isEmpty(stack)) {
-        stack_push(auxStack, stack_top(stack));
-        printf("%d ", stack_top(stack));
-        stack_pop(stack);
+    while (!s_isEmpty(stack)) {
+        s_push(auxStack, s_top(stack));
+        printf("%d ", s_top(stack));
+        s_pop(stack);
     }
 
     printf("\n");
-    while (!stack_isEmpty(auxStack)) {
-        stack_push(stack, stack_top(auxStack));
-        stack_pop(auxStack);
+    while (!s_isEmpty(auxStack)) {
+        s_push(stack, s_top(auxStack));
+        s_pop(auxStack);
     }
 
-    stack_destroy(auxStack);
+    s_destroy(auxStack);
 }

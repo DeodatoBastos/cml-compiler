@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include "ast.h"
+#include "queue.h"
 
 /* Function new_stmt_node creates a new statement
  * node for syntax tree construction
@@ -13,10 +14,10 @@ ASTNode *new_stmt_node(StmtKind stmt_kind, const char *name);
  */
 ASTNode *new_expr_node(ExprKind expr_kind, const char *name);
 
-/* procedure get_return_node gets the return node associated
+/* procedure get_return_node gets the return nodes associated
  * to a function to verify if it respects the type definition
  */
-ASTNode *get_return_node(ASTNode* node);
+void get_return_nodes(ASTNode* node, Queue *q);
 
 /* Procedure type_str gets the string type
  * of the enum
