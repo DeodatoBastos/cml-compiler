@@ -18,6 +18,12 @@ OUTPUT=frontend.out
 # ARGS ?=
 ARGS=--ts --tp --ta
 
+CXXFLAGS = -std=c2x -pedantic -Wall -Wextra -Wconversion
+CXXFLAGS_WNO = -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion
+LDFLAGS = -lm -lfl
+# CXXFLAGS = -Werror -Wdouble-promotion -g3 -Wfloat-equal -fsanitize=leak,address -fsanitize-trap=undefined
+EXTRAFLAGS= -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L
+
 # Default rule
 all: $(OUTPUT)
 
@@ -30,7 +36,7 @@ $(BISON_C) $(BISON_H): $(BISON_SRC)
 
 # Compile the frontend
 $(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
-	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) -lfl
+	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
 
 # Run the program with a single file from the "example" directory
 example-file: $(OUTPUT)
