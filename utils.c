@@ -53,19 +53,23 @@ ASTNode *new_expr_node(ExprKind kind, const char *name) {
 /* procedure get_return_node gets the return node associated
  * to a function to verify if it respects the type definition
  */
-void get_return_nodes(ASTNode *node, Queue *q) {
+bool get_return_nodes(ASTNode *node, Queue *q) {
     if (node == NULL)
-        return;
+        return false;
+
+    bool has_return = false;
 
     for (int i = 0; i < MAXCHILDREN; i++)
         get_return_nodes(node->child[i], q);
 
-    get_return_nodes(node->sibling, q);
+    has_return |= get_return_nodes(node->sibling, q);
 
-    if (node->node_kind == Stmt && node->kind.stmt == Return)
+    if (node->node_kind == Stmt && node->kind.stmt == Return) {
         q_push(q, node);
+        has_return = true;
+    }
 
-    return;
+    return has_return;
 }
 
 void print_indent(int depth) {

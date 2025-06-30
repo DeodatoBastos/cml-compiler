@@ -17,7 +17,7 @@ ASTNode *new_expr_node(ExprKind expr_kind, const char *name);
 /* procedure get_return_node gets the return nodes associated
  * to a function to verify if it respects the type definition
  */
-void get_return_nodes(ASTNode* node, Queue *q);
+bool get_return_nodes(ASTNode* node, Queue *q);
 
 /* Procedure type_str gets the string type
  * of the enum

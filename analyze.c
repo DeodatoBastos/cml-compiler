@@ -265,9 +265,14 @@ static void check_node(ASTNode *n) {
                     if (n->type != Void) {
                         char *msg;
                         Queue *q = q_create();
-                        get_return_nodes(n->child[1], q);
+                        bool has_return = get_return_nodes(n->child[1]->child[1], q); // func_decl -> (params, compound) -> (local_decl, stmt_list)
                         if (q_isEmpty(q)) {
                             asprintf(&msg, "return stmt not found for the integer function '%s'", n->attr.name);
+                            type_error(n, msg);
+                            free(msg);
+                        }
+                        if (!has_return) {
+                            asprintf(&msg, "return stmt not found in all control paths in the integer function '%s'", n->attr.name);
                             type_error(n, msg);
                             free(msg);
                         }
