@@ -198,7 +198,7 @@ void build_symtab(ASTNode *syntaxTree) {
     }
     s_destroy(stack);
     if (st_lookup("main", 0) == NULL) {
-        fprintf(listing, "\033[1;Error\033: main function not found");
+        fprintf(listing, "\033[1;31mError\033[0m: main function not found\n");
         Error = true;
     }
 }
@@ -239,7 +239,6 @@ static void activate_node(ASTNode * n) {
     }
 }
 
-
 /* Procedure check_node performs
  * type checking at a single tree node
  */
@@ -267,16 +266,17 @@ static void check_node(ASTNode *n) {
                         char *msg;
                         Queue *q = q_create();
                         get_return_nodes(n->child[1], q);
+                        if (q_isEmpty(q)) {
+                            asprintf(&msg, "return stmt not found for the integer function '%s'", n->attr.name);
+                            type_error(n, msg);
+                            free(msg);
+                        }
                         while (!q_isEmpty(q)) {
                             node = q_front(q);
-                            if (node == NULL) {
-                                asprintf(&msg, "return stmt not found for the integer function '%s'", n->attr.name);
-                                type_error(n, msg);
-                                free(msg);
-                            }
-                            else if (n->type != node->type) {
+                            if (n->type != node->type) {
                                 asprintf(&msg, "return type of function '%s' must be integer", n->attr.name);
                                 type_error(node, msg);
+                                free(msg);
                             }
                             q_pop(q);
                         }

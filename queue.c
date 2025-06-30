@@ -45,8 +45,7 @@ void q_push(Queue *queue, void *element) {
         return;
     }
 
-    QNode *newNode;
-    newNode = (QNode *)malloc(sizeof(QNode));
+    QNode *newNode = (QNode *)malloc(sizeof(QNode));
 
     queue->end->next = newNode;
     newNode->next = NULL;
@@ -58,8 +57,7 @@ void q_pop(Queue *queue) {
     if (q_isEmpty(queue))
         return;
 
-    QNode *auxNode;
-    auxNode = queue->begin;
+    QNode *auxNode = queue->begin;
     queue->begin = queue->begin->next;
 
     if (queue->begin == NULL)

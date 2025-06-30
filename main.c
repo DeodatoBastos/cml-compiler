@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "global.h"
+#include "symtab.h"
 #include "utils.h"
 // #include "scan.h"
 #include "parse.h"
@@ -90,6 +91,7 @@ int main(int argc, char **argv) {
     }
 
     fclose(source);
+    free_symtab();
     free_ast(syntaxTree);
     return 0;
 }
