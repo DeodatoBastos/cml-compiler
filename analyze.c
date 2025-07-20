@@ -10,7 +10,7 @@
 #include "analyze.h"
 
 /* counter for variable memory locations */
-static int location = 0;
+static int address = 0;
 
 /* counter for variables scopes */
 static int scope = 0;
@@ -81,31 +81,46 @@ static void insert_node(ASTNode * n) {
                 case VarDecl:
                 case ArrDecl:
                     bucket = st_lookup_soft(n->attr.name);
-                    if (bucket == NULL)
+                    n->scope = s_top(stack);
+                    int size = 1;
+                    if (n->child[0] != NULL) {
+                        size = n->child[0]->attr.val;
+                    }
+                    if (bucket == NULL) {
                         /* not yet in table, so treat as new definition */
-                        st_insert(n, s_top(stack), location++);
+                        st_insert(n, s_top(stack), address);
+                        address += size;
+                    }
                     else if (bucket->node->kind.expr == FuncDecl)
                         /* function defined with the same name raise an error */
                         var_error(n, var_type_str(n->kind.expr), "has the name of a function already declared", s_top(stack));
-                    else if (bucket->scope != s_top(stack))
-                        /* not yet in table, so treat as new definition */
-                        st_insert(n, s_top(stack), location++);
+                    else if (bucket->scope != s_top(stack)) {
+                        /* not yet in table, so treat as new definition for this scope */
+                        st_insert(n, s_top(stack), address);
+                        address += size;
+                    }
                     else
                         /* already in table raise an error */
                         var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
                     break;
                 case FuncDecl:
+                    n->scope = s_top(stack);
                     if (st_lookup(n->attr.name, s_top(stack)) == NULL)
                         /* not yet in table, so treat as new definition */
-                        st_insert(n, s_top(stack), location++);
+                        st_insert(n, s_top(stack), address++);
                     else
                         /* already in table raise an error */
                         var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
                     break;
                 case ParamVar:
+                    n->scope = scope+1;
+                    /* not yet in table, so treat as new definition */
+                    st_insert(n, scope+1, address++); // parameters are defined before entering a new scope
+                    break;
                 case ParamArr:
-                        /* not yet in table, so treat as new definition */
-                        st_insert(n, scope+1, location++); // parameters are defined before entering a new scope
+                    n->scope = scope+1;
+                    /* not yet in table, so treat as new definition */
+                    st_insert(n, scope+1, -1); // parameters are defined before entering a new scope
                     break;
                 case Var:
                 case Arr:
@@ -114,10 +129,12 @@ static void insert_node(ASTNode * n) {
                     if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
                         var_error(n, var_type_str(n->kind.expr), "never defined used", s_top(stack));
-                    else
+                    else {
                         /* already in table, so ignore location,
                          add line number of use only */
-                        st_insert(n, bucket->scope, 0);
+                        n->scope = bucket->scope;
+                        st_insert(n, bucket->scope, -1);
+                    }
                     break;
                 default:
                     break;
@@ -130,7 +147,6 @@ static void insert_node(ASTNode * n) {
 
 static void delete_decls(ASTNode *n) {
     if (!n) return;
-
     delete_decls(n->sibling);
 
     if (n->node_kind == Expr) {
@@ -296,39 +312,39 @@ static void check_node(ASTNode *n) {
 
                     node = bucket->node;
                     n->type = node->type;
-                    ASTNode *tc = n->child[0];
-                    ASTNode *td = node->child[0];
-                    int nc = 0, nd = 0;
+                    ASTNode *node_call = n->child[0];
+                    ASTNode *node_def = node->child[0];
+                    int num_call = 0, num_def = 0;
                     char *msg;
 
                     // check args types and quantity
-                    while (tc != NULL && td != NULL) {
-                        if ((tc->type != td->type) ||
-                            (td->kind.expr == ParamArr && (tc->kind.expr != Arr && tc->kind.expr != ParamArr)) ||
-                            (td->kind.expr == ParamVar && (tc->kind.expr == Arr || tc->kind.expr == ParamArr))) {
+                    while (node_call != NULL && node_def != NULL) {
+                        if ((node_def->type != node_call->type) ||
+                            (node_def->kind.expr == ParamArr && (node_call->kind.expr != Arr && node_call->kind.expr != ParamArr)) ||
+                            (node_def->kind.expr == ParamVar && (node_call->kind.expr == Arr || node_call->kind.expr == ParamArr))) {
                             asprintf(&msg, "argument '%s' of function '%s' must be '%s %s' instead of '%s %s'",
-                                    td->attr.name, node->attr.name,
-                                    type_str(td->type), var_type_str(td->kind.expr),
-                                    type_str(tc->type), var_type_str(tc->kind.expr));
-                            type_error(tc, msg);
+                                    node_def->attr.name, node->attr.name,
+                                    type_str(node_def->type), var_type_str(node_def->kind.expr),
+                                    type_str(node_call->type), var_type_str(node_call->kind.expr));
+                            type_error(node_call, msg);
                             free(msg);
                         }
-                        tc = tc->sibling;
-                        td = td->sibling;
-                        nc++;
-                        nd++;
+                        node_call = node_call->sibling;
+                        node_def = node_def->sibling;
+                        num_call++;
+                        num_def++;
                     }
-                    while (tc != NULL) {
-                        tc = tc->sibling;
-                        nc++;
+                    while (node_call != NULL) {
+                        node_call = node_call->sibling;
+                        num_call++;
                     }
-                    while (td != NULL) {
-                        td = td->sibling;
-                        nd++;
+                    while (node_def != NULL) {
+                        node_def = node_def->sibling;
+                        num_def++;
                     }
-                    if (nc != nd) {
+                    if (num_call != num_def) {
                         asprintf(&msg, "too %s function '%s' expected '%d' arguments instead of '%d'",
-                                nd > nc ? "few" : "much", n->attr.name, nd, nc);
+                                num_def > num_call ? "few" : "much", n->attr.name, num_def, num_call);
                         type_error(n, msg);
                         free(msg);
                     }
@@ -381,5 +397,9 @@ void type_check(ASTNode * syntaxTree) {
     scope = 0;
     s_push(stack, scope);
     traverse(syntaxTree, activate_node, check_node);
+    if (TraceAnalyze) {
+        fprintf(listing, "\nSymbol table:\n\n");
+        print_symtab(listing);
+    }
     s_destroy(stack);
 }

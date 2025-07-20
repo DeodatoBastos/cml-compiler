@@ -20,6 +20,7 @@ typedef enum {Void, Integer, Boolean} ExprType;
 
 typedef struct ASTNode {
     int lineno;
+    int scope;
 
     NodeKind node_kind;
     ExprType type;

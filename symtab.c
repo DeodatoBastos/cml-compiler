@@ -33,7 +33,7 @@ static BucketList *hashTable[SIZE];
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(ASTNode *node, int scope, int loc) {
+void st_insert(ASTNode *node, int scope, int addr) {
     int h = hash(node->attr.name);
     BucketList *l = hashTable[h];
     while ((l != NULL) && ((strcmp(node->attr.name, l->node->attr.name) != 0) || l->scope != scope))
@@ -47,7 +47,8 @@ void st_insert(ASTNode *node, int scope, int loc) {
         l->node = node;
         l->scope = scope;
         l->active = true;
-        l->memloc = loc;
+        l->offset = 0;
+        l->address = addr;
 
         l->lines = (LineList *)malloc(sizeof(LineList));
         l->lines->lineno = node->lineno;
@@ -78,17 +79,19 @@ void st_activate(char *name, int scope) {
 /* Function st_lookup returns the ASTNode
  * of a variable or NULL if not found
  */
-ASTNode *st_lookup(char *name, int scope) {
+BucketList *st_lookup(char *name, int scope) {
     int h = hash(name);
     BucketList *l = hashTable[h];
     while ((l != NULL) &&
            (!l->active || (strcmp(name, l->node->attr.name) != 0) || scope != l->scope))
         l = l->next;
 
-    if (l == NULL)
+    if (l == NULL) {
+        fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
         return NULL;
+    }
     else
-        return l->node;
+        return l;
 }
 
 /* Function st_lookup_node returns the BucketList
@@ -117,7 +120,7 @@ void st_delete(char *name, int scope) {
         l = l->next;
 
     if (l == NULL) {
-        fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
+        // fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
         return;
     }
     // fprintf(listing, "Deleting '%s' in scope '%d'\n", name, scope);
@@ -142,7 +145,7 @@ void print_symtab(FILE *listing) {
                 fprintf(listing, "%-4s  ", type_str(l->node->type));
                 fprintf(listing, "%-8s  ", var_type_str(l->node->kind.expr));
                 fprintf(listing, "%-5d  ", l->scope);
-                fprintf(listing, "%-8d  ", l->memloc);
+                fprintf(listing, "%-8d  ", l->address);
                 fprintf(listing, "%-6s   ", l->active ? "true" : "false");
 
                 while (t != NULL) {
