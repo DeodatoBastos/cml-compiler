@@ -7,26 +7,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* SIZE is the size of the hash table */
-#define SIZE 211
-
-/* SHIFT is the power of two used as multiplier
-   in hash function  */
-#define SHIFT 4
-
 /* the hash function */
 static int hash(char *key) {
     int temp = 0;
     int i = 0;
     while (key[i] != '\0') {
-        temp = ((temp << SHIFT) + key[i]) % SIZE;
+        temp = ((temp << SHIFT) + key[i]) % ST_SIZE;
         ++i;
     }
     return temp;
 }
 
 /* the hash table */
-static BucketList *hashTable[SIZE];
+static BucketList *hashTable[ST_SIZE];
 
 /* Procedure st_insert inserts line numbers and
  * memory locations into the symbol table
@@ -87,7 +80,7 @@ BucketList *st_lookup(char *name, int scope) {
         l = l->next;
 
     if (l == NULL) {
-        fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
+        // fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
         return NULL;
     }
     else
@@ -135,7 +128,7 @@ void print_symtab(FILE *listing) {
     fprintf(listing, "Variable Name  Type  Var Type  Scope  Location  Active   Line Numbers\n");
     fprintf(listing, "-------------  ----  --------  -----  --------  ------   ------------\n");
 
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < ST_SIZE; i++) {
         if (hashTable[i] != NULL) {
             BucketList *l = hashTable[i];
 
@@ -161,7 +154,7 @@ void print_symtab(FILE *listing) {
 } /* printSymTab */
 
 void free_symtab() {
-    for (int i = 0; i < SIZE; i++) {
+    for (int i = 0; i < ST_SIZE; i++) {
         free_bucket_list(hashTable[i]);
         hashTable[i] = NULL;
     }

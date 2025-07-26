@@ -59,15 +59,32 @@ bool get_return_nodes(ASTNode *node, Queue *q) {
 
     bool has_return = false;
 
-    for (int i = 0; i < MAXCHILDREN; i++)
-        get_return_nodes(node->child[i], q);
+    if (node->node_kind == Stmt && node->kind.stmt == If) {
+        ASTNode *then_part = node->child[1];
+        ASTNode *else_part = node->child[2];
 
-    has_return |= get_return_nodes(node->sibling, q);
+        bool then_returns = get_return_nodes(then_part, q);
+        bool else_returns = get_return_nodes(else_part, q);
+
+        if (else_returns) printf("vish %d %d\n", node->lineno, node->scope);
+
+        // Both branches MUST return
+        has_return = then_returns && else_returns;
+    }
 
     if (node->node_kind == Stmt && node->kind.stmt == Return) {
         q_push(q, node);
         has_return = true;
     }
+
+    for (int i = 0; i < MAXCHILDREN; i++) {
+        if (node->node_kind == Stmt && node->kind.stmt == If) {
+            continue;
+        }
+        has_return |= get_return_nodes(node->child[i], q);
+    }
+
+    has_return |= get_return_nodes(node->sibling, q);
 
     return has_return;
 }

@@ -5,6 +5,13 @@
 #include "stack.h"
 #include <stdio.h>
 
+/* ST_SIZE is the size of the hash table */
+#define ST_SIZE 211
+
+/* SHIFT is the power of two used as multiplier
+   in hash function  */
+#define SHIFT 4
+
 /* the list of line numbers of the source
  * code in which a variable is referenced
  */
