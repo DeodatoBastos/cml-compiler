@@ -1,0 +1,11 @@
+int main(void) {
+    int i;
+    int x;
+    i = 10;
+    x = input();
+    while (i >= 0) {
+        output(i + x * 2);
+    }
+    output(x());
+    return 0;
+}

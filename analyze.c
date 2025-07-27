@@ -132,6 +132,10 @@ static void insert_node(ASTNode * n) {
                     else {
                         /* already in table, so ignore location,
                          add line number of use only */
+                        if (n->kind.expr == FuncCall && bucket->node->kind.expr != FuncDecl) {
+                            var_error(n, var_type_str(n->kind.expr), "called as function", s_top(stack));
+                            break;
+                        }
                         n->scope = bucket->scope;
                         st_insert(n, bucket->scope, -1);
                     }
@@ -208,10 +212,10 @@ void build_symtab(ASTNode *syntaxTree) {
     scope = 0;
     s_push(stack, 0);
     traverse(syntaxTree, insert_node, delete_node);
-    if (TraceAnalyze) {
-        fprintf(listing, "\nSymbol table:\n\n");
-        print_symtab(listing);
-    }
+    // if (TraceAnalyze) {
+    //     fprintf(listing, "\nSymbol table:\n\n");
+    //     print_symtab(listing);
+    // }
     s_destroy(stack);
     if (st_lookup("main", 0) == NULL) {
         fprintf(listing, "\033[1;31mError\033[0m: main function not found\n");
