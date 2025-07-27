@@ -12,7 +12,7 @@ ANALYSIS_SRC=symtab.c analyze.c
 LEX_C=lex.yy.c
 BISON_C=parser.tab.c
 BISON_H=parser.tab.h
-OUTPUT=frontend.out
+OUTPUT=cmc.out
 
 # Optional flags passed via ARGS
 # ARGS ?=

@@ -129,13 +129,11 @@ static void insert_node(ASTNode * n) {
                     if (bucket == NULL)
                         /* not yet in table, so treat as new definition */
                         var_error(n, var_type_str(n->kind.expr), "never defined used", s_top(stack));
+                    else if (n->kind.expr == FuncCall && bucket->node->kind.expr != FuncDecl)
+                        var_error(n, var_type_str(n->kind.expr), "called as function", s_top(stack));
                     else {
                         /* already in table, so ignore location,
                          add line number of use only */
-                        if (n->kind.expr == FuncCall && bucket->node->kind.expr != FuncDecl) {
-                            var_error(n, var_type_str(n->kind.expr), "called as function", s_top(stack));
-                            break;
-                        }
                         n->scope = bucket->scope;
                         st_insert(n, bucket->scope, -1);
                     }
