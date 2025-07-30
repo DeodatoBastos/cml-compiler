@@ -31,7 +31,11 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 "void"                           { return VOID; }
 
 [-]?{digit}+                     { yylval.ival = atoi(yytext); return NUM; }
-{identifier}                     { yylval.sval = strdup(yytext); return ID; }
+{identifier}                     {
+                                    yylval.sval = malloc(yyleng + 1);
+                                    memcpy(yylval.sval, yytext, yyleng+1);
+                                    return ID;
+                                 }
 
 "<="                             { return LE; }
 ">="                             { return GE; }
@@ -40,10 +44,10 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 ">"                              { return GT; }
 "<"                              { return LT; }
 
-"+"                              { return ADD; }
-"-"                              { return SUB; }
-"*"                              { return MUL; }
-"/"                              { return DIV; }
+"+"                              { return PLUS; }
+"-"                              { return MINUS; }
+"*"                              { return TIMES; }
+"/"                              { return OVER; }
 "%"                              { return MOD; }
 
 "{"                              { return LBRACE; }

@@ -66,8 +66,6 @@ bool get_return_nodes(ASTNode *node, Queue *q) {
         bool then_returns = get_return_nodes(then_part, q);
         bool else_returns = get_return_nodes(else_part, q);
 
-        if (else_returns) printf("vish %d %d\n", node->lineno, node->scope);
-
         // Both branches MUST return
         has_return = then_returns && else_returns;
     }
@@ -306,16 +304,16 @@ void print_token(TokenType token, const char *tokenString) {
         fprintf(listing, ",\n");
         break;
 
-    case ADD:
+    case PLUS:
         fprintf(listing, "+\n");
         break;
-    case SUB:
+    case MINUS:
         fprintf(listing, "-\n");
         break;
-    case MUL:
+    case TIMES:
         fprintf(listing, "*\n");
         break;
-    case DIV:
+    case OVER:
         fprintf(listing, "/\n");
         break;
     case MOD:
@@ -351,4 +349,17 @@ void print_help(const char *program_name) {
     printf("  --ta      Enable tracing of the analyzer\n");
     printf("  --tc      Enable tracing of the code generation\n");
     printf("  --help    Show this help message\n");
+}
+
+int get_size(ExprType type) {
+    switch (type) {
+    case Void:
+        return 0;
+    case Integer:
+        return 4;
+    case Boolean:
+        return 0;
+    default:
+        return 0;
+    }
 }

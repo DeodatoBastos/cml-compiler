@@ -29,15 +29,15 @@ static ASTNode *root;
 %define parse.trace
 %start program
 
-%left MUL DIV MOD
-%left ADD SUB
+%left TIMES OVER MOD
+%left PLUS MINUS
 
 %token WRITE READ WHILE IF ELSE RETURN
 %token <ival> NUM
 %token INT VOID
 %token <sval> ID
 %token LE GE EQ NE GT LT
-%token ADD SUB MUL DIV MOD
+%token PLUS MINUS TIMES OVER MOD
 %token LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK SEMICOLON COMMA ASSIGN
 %token ERROR
 
@@ -275,8 +275,8 @@ add_expr: add_expr addop term {
         }
 ;
 
-addop: ADD { $$ = ADD; }
-     | SUB { $$ = SUB; }
+addop: PLUS { $$ = PLUS; }
+     | MINUS { $$ = MINUS; }
 ;
 
 term: term mulop factor {
@@ -291,8 +291,8 @@ term: term mulop factor {
     }
 ;
 
-mulop: MUL { $$ = MUL; }
-     | DIV { $$ = DIV; }
+mulop: TIMES { $$ = TIMES; }
+     | OVER { $$ = OVER; }
      | MOD { $$ = MOD; }
 ;
 
