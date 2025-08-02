@@ -75,15 +75,13 @@ void st_activate(char *name, int scope) {
 BucketList *st_lookup(char *name, int scope) {
     int h = hash(name);
     BucketList *l = hashTable[h];
-    while ((l != NULL) &&
-           (!l->active || (strcmp(name, l->node->attr.name) != 0) || scope != l->scope))
+    while ((l != NULL) && ((strcmp(name, l->node->attr.name) != 0) || scope != l->scope))
         l = l->next;
 
     if (l == NULL) {
         // fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
         return NULL;
-    }
-    else
+    } else
         return l;
 }
 

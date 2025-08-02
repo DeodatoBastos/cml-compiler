@@ -321,6 +321,7 @@ static void check_node(ASTNode *n) {
             break;
         case FuncCall:
             bucket = st_lookup_soft(n->attr.name);
+            // bucket = st_lookup(n->attr.name, 0);
             if (bucket == NULL)
                 break;
 

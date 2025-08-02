@@ -6,6 +6,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+AST *new_ast() {
+    AST *tree = (AST *)malloc(sizeof(AST));
+    ASTNode *root = (ASTNode *)malloc(sizeof(ASTNode));
+    root->lineno = -1;
+    root->temp_reg_result = -1;
+    root->scope = -1;
+
+    root->node_kind = Stmt;
+    root->type = Void;
+    root->kind.stmt = Root;
+
+    root->sibling = NULL;
+    for (int i = 0; i < MAXCHILDREN; i++)
+        root->child[i] = NULL;
+
+    tree->root = root;
+    return tree;
+}
+
 /* Function new_stmt_node creates a new statement
  * node for syntax tree construction
  */
@@ -19,6 +38,7 @@ ASTNode *new_stmt_node(StmtKind kind, const char *name) {
     n->node_kind = Stmt;
     n->kind.stmt = kind;
     n->lineno = lineno;
+    n->temp_reg_result = 0;
     n->attr.name = name ? strdup(name) : NULL;
 
     n->sibling = NULL;

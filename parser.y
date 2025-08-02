@@ -14,7 +14,7 @@ int yyerror(const char *s);
 static int yylex();
 
 static ASTNode *root;
-// static int savedLineNo;  /* ditto */
+// static AST *tree;
 
 %}
 
@@ -47,9 +47,15 @@ static ASTNode *root;
 %type  <tval> relop addop mulop
 %type  <type> type_spec
 
+%destructor { free($$); } <sval>
+
 %%
 
-program: decl_list { root = $1; }
+program: decl_list {
+       // tree = new_ast();
+       // tree->root->child[0] = $1;
+       root = $1;
+}
 ;
 
 decl_list: decl_list decl {
@@ -168,7 +174,7 @@ stmt: expr_stmt { $$ = $1; }
     | return_stmt { $$ = $1; }
     | read_stmt { $$ = $1; }
     | write_stmt { $$ = $1; }
-    | error { $$ = NULL; }
+    | error SEMICOLON { $$ = NULL; }
 ;
 
 expr_stmt: expr SEMICOLON {
@@ -310,9 +316,6 @@ factor: LPAREN expr RPAREN {
         $$->attr.val = $1;
         $$->type = Integer;
       }
-      | error {
-        $$ = NULL;
-      }
 ;
 
 func_call: ID LPAREN args RPAREN {
@@ -360,4 +363,5 @@ static int yylex(void) {
 ASTNode *parse(void) {
     yyparse();
     return root;
+    // return tree;
 }
