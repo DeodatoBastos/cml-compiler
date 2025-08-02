@@ -9,6 +9,7 @@ BISON_SRC=parser.y
 MAIN_SRC=main.c
 UTILS_SRC=utils.c stack.c queue.c
 ANALYSIS_SRC=symtab.c analyze.c
+CODE_SRC=ir.c cgen.c
 LEX_C=lex.yy.c
 BISON_C=parser.tab.c
 BISON_H=parser.tab.h
@@ -18,7 +19,7 @@ OUTPUT=cmc.out
 # ARGS ?=
 ARGS=--ts --tp --ta
 
-CXXFLAGS = -std=c2x -pedantic -Wall -Wextra -Wconversion
+CXXFLAGS = -std=c2x -pedantic -Wall -Wextra -Wconversion -g
 CXXFLAGS_WNO = -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion
 LDFLAGS = -lm -lfl
 # CXXFLAGS = -Werror -Wdouble-promotion -g3 -Wfloat-equal -fsanitize=leak,address -fsanitize-trap=undefined
@@ -35,8 +36,8 @@ $(BISON_C) $(BISON_H): $(BISON_SRC)
 	$(BISON) -v -d $(BISON_SRC)
 
 # Compile the frontend
-$(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
-	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
+$(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
+	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
 
 # Run the program with a single file from the "example" directory
 example-file: $(OUTPUT)
@@ -69,6 +70,30 @@ run-file: $(OUTPUT)
 	if [ -n "$$selected" ]; then \
 		echo "=== Running: ./$(OUTPUT) $(ARGS) $$selected ==="; \
 		./$(OUTPUT) $(ARGS) "$$selected"; \
+	else \
+		echo "Invalid selection."; \
+		exit 1; \
+	fi
+
+# Run the program with Valgrind on a selected file from "example"
+run-valgrind: $(OUTPUT)
+	@indir="example"; \
+	i=0; \
+	for f in "$$indir"/*.c "$$indir"/*.cm; do \
+		[ -f "$$f" ] || continue; \
+		echo "[$$i] $$f"; \
+		eval "file_$$i='$$f'"; \
+		i=$$((i+1)); \
+	done; \
+	if [ "$$i" -eq 0 ]; then \
+		echo "No .c or .cm files found in $$indir."; \
+		exit 1; \
+	fi; \
+	read -p "Enter the number of the file to run with Valgrind: " idx; \
+	eval "selected=\$$file_$$idx"; \
+	if [ -n "$$selected" ]; then \
+		echo "=== Running under Valgrind: ./$(OUTPUT) $(ARGS) $$selected ==="; \
+		valgrind --leak-check=full --track-origins=yes ./$(OUTPUT) $(ARGS) "$$selected"; \
 	else \
 		echo "Invalid selection."; \
 		exit 1; \
