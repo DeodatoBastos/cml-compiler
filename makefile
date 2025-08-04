@@ -76,7 +76,7 @@ run-file: $(OUTPUT)
 	fi
 
 # Run the program with Valgrind on a selected file from "example"
-run-valgrind: $(OUTPUT)
+debug: $(OUTPUT)
 	@indir="example"; \
 	i=0; \
 	for f in "$$indir"/*.c "$$indir"/*.cm; do \

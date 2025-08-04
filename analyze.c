@@ -137,6 +137,8 @@ static void insert_node(ASTNode *n) {
                  add line number of use only */
                 n->scope = bucket->scope;
                 st_insert(n, bucket->scope, -1);
+                if ((bucket->node->kind.expr == ArrDecl) || (bucket->node->kind.expr == ParamArr))
+                    n->kind.expr = Arr;
             }
             break;
         default:
@@ -273,15 +275,6 @@ static void check_node(ASTNode *n) {
         case ArrDecl:
             if (n->type != Integer)
                 type_error(n, "declaration of non-integer variable");
-            break;
-        case Var:
-            bucket = st_lookup_soft(n->attr.name);
-            if (bucket == NULL)
-                break;
-
-            node = bucket->node;
-            n->kind.expr =
-                (node->kind.expr == ArrDecl) || (node->kind.expr == ParamArr) ? Arr : Var;
             break;
         case FuncDecl:
             if (n->type != Void) {
