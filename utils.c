@@ -10,7 +10,7 @@ AST *new_ast() {
     AST *tree = (AST *)malloc(sizeof(AST));
     ASTNode *root = (ASTNode *)malloc(sizeof(ASTNode));
     root->lineno = -1;
-    root->temp_reg_result = -1;
+    root->temp_reg = -1;
     root->scope = -1;
 
     root->node_kind = Stmt;
@@ -38,7 +38,7 @@ ASTNode *new_stmt_node(StmtKind kind, const char *name) {
     n->node_kind = Stmt;
     n->kind.stmt = kind;
     n->lineno = lineno;
-    n->temp_reg_result = 0;
+    n->temp_reg = 0;
     n->attr.name = name ? strdup(name) : NULL;
 
     n->sibling = NULL;
