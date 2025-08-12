@@ -11,10 +11,11 @@
 
 /* counter for variable memory locations */
 static int address = 0;
-
+/* counter for offset memory locations */
+static int param_offset = 0;
+static int local_offset = 0;
 /* counter for variables scopes */
 static int scope = 0;
-
 /* cache used to delete Parameters */
 static int last_scope;
 
@@ -87,41 +88,48 @@ static void insert_node(ASTNode *n) {
             if (n->child[0] != NULL) {
                 size = n->child[0]->attr.val;
             }
-            if (bucket == NULL) {
-                /* not yet in table, so treat as new definition */
-                st_insert(n, s_top(stack), address);
-                address += size;
-            } else if (bucket->node->kind.expr == FuncDecl)
+
+            if (bucket == NULL) { // not yet in table, so treat as new definition
+                if (n->scope == 0) {
+                    st_insert(n, s_top(stack), address, 0);
+                    address += size * 4;
+                } else { // addres only for global variables
+                    local_offset -= 4 * size;
+                    st_insert(n, s_top(stack), -1, local_offset);
+                }
+            } else if (bucket->node->kind.expr == FuncDecl) {
                 /* function defined with the same name raise an error */
                 var_error(n, var_type_str(n->kind.expr),
                           "has the name of a function already declared", s_top(stack));
-            else if (bucket->scope != s_top(stack)) {
-                /* not yet in table, so treat as new definition for this scope */
-                st_insert(n, s_top(stack), address);
-                address += size;
-            } else
-                /* already in table raise an error */
+            } else if (bucket->scope != s_top(stack)) { // new scope
+                local_offset -= 4 * size;
+                st_insert(n, s_top(stack), -1, local_offset);
+            } else { // already in table raise an error
                 var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
+            }
             break;
         case FuncDecl:
+            param_offset = 4;
+            local_offset = 0;
             n->scope = s_top(stack);
-            if (st_lookup(n->attr.name, s_top(stack)) == NULL)
-                /* not yet in table, so treat as new definition */
-                st_insert(n, s_top(stack), address++);
-            else
-                /* already in table raise an error */
+            if (st_lookup(n->attr.name, s_top(stack)) == NULL) {
+                st_insert(n, s_top(stack), -1, 0);
+                // address += 4;
+            } else { // already in table raise an error
                 var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
+            }
             break;
         case ParamVar:
+            // parameters are defined before entering a new scope
             n->scope = scope + 1;
-            /* not yet in table, so treat as new definition */
-            st_insert(n, scope + 1,
-                      address++); // parameters are defined before entering a new scope
+            param_offset += 4;
+            st_insert(n, scope + 1, -1, param_offset);
             break;
         case ParamArr:
+            // parameters are defined before entering a new scope
             n->scope = scope + 1;
-            /* not yet in table, so treat as new definition */
-            st_insert(n, scope + 1, -1); // parameters are defined before entering a new scope
+            param_offset += 4;
+            st_insert(n, scope + 1, -1, param_offset);
             break;
         case Var:
         case Arr:
@@ -136,7 +144,7 @@ static void insert_node(ASTNode *n) {
                 /* already in table, so ignore location,
                  add line number of use only */
                 n->scope = bucket->scope;
-                st_insert(n, bucket->scope, -1);
+                st_insert(n, bucket->scope, -1, 0);
                 if ((bucket->node->kind.expr == ArrDecl) || (bucket->node->kind.expr == ParamArr))
                     n->kind.expr = Arr;
             }

@@ -31,17 +31,17 @@ typedef struct BucketListRec {
     ASTNode *node;
     int scope;
     bool active;
-    int offset;   /* stack offset */
-    int address;  /* memory location for variable */
+    int offset;  /* stack offset */
+    int address; /* memory location for global variable */
     struct BucketListRec *next;
 } BucketList;
 
 /* Procedure st_insert inserts line numbers and
  * memory locations into the symbol table
- * loc = memory location is inserted only the
+ * addr = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(ASTNode *node, int scope, int addr);
+void st_insert(ASTNode *node, int scope, int addr, int offset);
 
 /* Function st_activate activate the given
  * variable

@@ -26,7 +26,7 @@ static BucketList *hashTable[ST_SIZE];
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(ASTNode *node, int scope, int addr) {
+void st_insert(ASTNode *node, int scope, int addr, int offset) {
     int h = hash(node->attr.name);
     BucketList *l = hashTable[h];
     while ((l != NULL) && ((strcmp(node->attr.name, l->node->attr.name) != 0) || l->scope != scope))
@@ -40,7 +40,7 @@ void st_insert(ASTNode *node, int scope, int addr) {
         l->node = node;
         l->scope = scope;
         l->active = true;
-        l->offset = 0;
+        l->offset = offset;
         l->address = addr;
 
         l->lines = (LineList *)malloc(sizeof(LineList));
