@@ -54,6 +54,8 @@ void print_token(TokenType, const char *);
  */
 void print_help(const char *program_name);
 
+void replace_ext(char *dest, const char *src, const char *new_ext);
+
 int get_size(ExprType type);
 
 #endif

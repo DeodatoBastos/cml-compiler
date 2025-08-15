@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "ast.h"
 #include "global.h"
+#include "parser.tab.h"
 #include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -210,11 +211,7 @@ void print_tree(ASTNode *node, int depth) {
         fprintf(listing, "%s", node_kind_str(node));
 
         if (node->node_kind == Stmt) {
-            if (node->kind.stmt == Read) {
-                fprintf(listing, "%s\n", node->attr.name);
-            } else {
-                fprintf(listing, "\n");
-            }
+            fprintf(listing, "\n");
         } else if (node->node_kind == Expr) {
             if (node->kind.expr == Const) {
                 fprintf(listing, "(%d)\n", node->attr.val);
@@ -369,6 +366,17 @@ void print_help(const char *program_name) {
     printf("  --ta      Enable tracing of the analyzer\n");
     printf("  --tc      Enable tracing of the code generation\n");
     printf("  --help    Show this help message\n");
+}
+
+void replace_ext(char *dest, const char *src, const char *new_ext) {
+    strcpy(dest, src);
+    char *dot = strrchr(dest, '.');
+
+    if (dot) {
+        *dot = '\0';
+    }
+
+    strcat(dest, new_ext);
 }
 
 int get_size(ExprType type) {

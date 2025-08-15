@@ -1,19 +1,25 @@
+#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
+#include "cgen.h"
 #include "global.h"
+#include "ir.h"
 #include "symtab.h"
 #include "utils.h"
 // #include "scan.h"
-#include "parse.h"
 #include "analyze.h"
+#include "cgen.h"
+#include "parse.h"
 
 /* allocate global variables */
 int lineno = 0;
-FILE * source;
-FILE * listing;
-FILE * code;
+FILE *source;
+FILE *listing;
+FILE *code;
 
 /* allocate and set tracing flags */
 bool TraceScan = false;
@@ -24,7 +30,8 @@ bool TraceCode = false;
 bool Error = false;
 
 int main(int argc, char **argv) {
-    char program[128];
+    char program[128] = {0};
+    char out_file[256] = {0};
     bool first_time = true;
     bool has_multiple_srcs = false;
 
@@ -42,6 +49,13 @@ int main(int argc, char **argv) {
             TraceAnalyze = true;
         } else if (strcmp(argv[i], "--tc") == 0) {
             TraceCode = true;
+        } else if (strcmp(argv[i], "-o") == 0) {
+            if (i + 1 < argc) {
+                strncpy(out_file, argv[++i], sizeof(out_file) - 1);
+            } else {
+                fprintf(stderr, "Error: -o flag requires an output file name\n");
+                return 1;
+            }
         } else if (argv[i][0] == '-') {
             printf("Unknown option: %s\n", argv[i]);
             print_help(argv[0]);
@@ -53,12 +67,18 @@ int main(int argc, char **argv) {
                 has_multiple_srcs = true;
                 break;
             }
-            strcpy(program, argv[i]);
+            strncpy(program, argv[i], sizeof(program) - 1);
         }
     }
 
     if (has_multiple_srcs) {
         fprintf(stderr, "Error: Too many input files.");
+        print_help(argv[0]);
+        return 1;
+    }
+
+    if (program[0] == '\0') {
+        fprintf(stderr, "Error: No input file provided.\n");
         print_help(argv[0]);
         return 1;
     }
@@ -70,8 +90,20 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    if (out_file[0] == '\0') {
+        char base[128];
+        replace_ext(base, program, ".asm");
+        snprintf(out_file, sizeof(out_file), "asm/%s", base);
+
+        if (mkdir("asm", 0777) != 0 && errno != EEXIST) {
+            perror("Error creating asm directory");
+            fclose(source);
+            return 1;
+        }
+    }
+
     listing = stdout;
-    fprintf(listing, "C- COMPILATION: %s\n", argv[1]);
+    fprintf(listing, "C- COMPILATION: %s\n", program);
 
     ASTNode *syntaxTree = NULL;
     if (!Error) {
@@ -83,14 +115,34 @@ int main(int argc, char **argv) {
     }
 
     if (!Error) {
-        if (TraceAnalyze) fprintf(listing, "\nBuilding Symbol Table...\n");
+        if (TraceAnalyze)
+            fprintf(listing, "\nBuilding Symbol Table...\n");
         build_symtab(syntaxTree);
-        if (TraceAnalyze) fprintf(listing,"\nChecking Types...\n");
+        if (TraceAnalyze)
+            fprintf(listing, "\nChecking Types...\n");
         type_check(syntaxTree);
-        if (TraceAnalyze) fprintf(listing,"\nType Checking Finished\n");
+        if (TraceAnalyze)
+            fprintf(listing, "\nType Checking Finished\n");
     }
 
+    IR *ir = NULL;
+    if (!Error) {
+        code = fopen(out_file, "w");
+        if (!code) {
+            fprintf(stderr, "Error opening output file %s.", out_file);
+            perror("Error opening file");
+            fclose(source);
+            return 1;
+        }
+
+        ir = gen_ir(syntaxTree);
+        print_ir(ir, code);
+    }
+
+    if (code != NULL)
+        fclose(code);
     fclose(source);
+    free_ir(ir);
     free_symtab();
     free_ast(syntaxTree);
     return 0;
