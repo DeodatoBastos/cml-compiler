@@ -9,11 +9,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* counter for variable memory locations */
-static int address = 0;
-/* counter for offset memory locations */
+/* counter for global variable memory locations */
+static int global_address = 0;
+
+/* counters for stack frame offsets */
 static int param_offset = 0;
 static int local_offset = 0;
+
 /* counter for variables scopes */
 static int scope = 0;
 /* cache used to delete Parameters */
@@ -84,18 +86,15 @@ static void insert_node(ASTNode *n) {
         case ArrDecl:
             bucket = st_lookup_soft(n->attr.name);
             n->scope = s_top(stack);
-            int size = 1;
-            if (n->child[0] != NULL) {
-                size = n->child[0]->attr.val;
-            }
+            int size = n->child[0] != NULL ? n->child[0]->attr.val : 1;
 
             if (bucket == NULL) { // not yet in table, so treat as new definition
                 if (n->scope == 0) {
-                    st_insert(n, s_top(stack), address, 0);
-                    address += size * 4;
-                } else { // addres only for global variables
+                    st_insert(n, n->scope, global_address, 0);
+                    global_address += size * 4;
+                } else {
                     local_offset -= 4 * size;
-                    st_insert(n, s_top(stack), -1, local_offset);
+                    st_insert(n, n->scope, -1, local_offset);
                 }
             } else if (bucket->node->kind.expr == FuncDecl) {
                 /* function defined with the same name raise an error */
@@ -103,33 +102,27 @@ static void insert_node(ASTNode *n) {
                           "has the name of a function already declared", s_top(stack));
             } else if (bucket->scope != s_top(stack)) { // new scope
                 local_offset -= 4 * size;
-                st_insert(n, s_top(stack), -1, local_offset);
+                st_insert(n, n->scope, -1, local_offset);
             } else { // already in table raise an error
                 var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
             }
             break;
         case FuncDecl:
-            param_offset = 4;
+            param_offset = 8;
             local_offset = 0;
             n->scope = s_top(stack);
             if (st_lookup(n->attr.name, s_top(stack)) == NULL) {
-                st_insert(n, s_top(stack), -1, 0);
-                // address += 4;
+                st_insert(n, n->scope, -1, 0);
             } else { // already in table raise an error
                 var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
             }
             break;
         case ParamVar:
-            // parameters are defined before entering a new scope
-            n->scope = scope + 1;
-            param_offset += 4;
-            st_insert(n, scope + 1, -1, param_offset);
-            break;
         case ParamArr:
             // parameters are defined before entering a new scope
             n->scope = scope + 1;
-            param_offset += 4;
             st_insert(n, scope + 1, -1, param_offset);
+            param_offset += 4;
             break;
         case Var:
         case Arr:

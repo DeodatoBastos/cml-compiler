@@ -13,10 +13,13 @@ int main(void) {
     x = 1;
 
     while (i < 10) {
+        int z;
         i = i + 1;
         x = x * i;
+        z = x + i;
 
         if (i == 5) {
+            int y;
             output(x);
         } else if (i > 6) {
             output(i);
@@ -29,6 +32,8 @@ int main(void) {
         } else if (i != 2) {
             output(x);
         }
+
+        output(z);
     }
 
     output(x);
