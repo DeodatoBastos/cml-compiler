@@ -16,8 +16,8 @@ BISON_H=parser.tab.h
 OUTPUT=cmc.out
 
 # Optional flags passed via ARGS
-# ARGS ?=
-ARGS=--ts --tp --ta
+ARGS ?=
+# ARGS=--ts --tp --ta
 
 CXXFLAGS = -std=c2x -pedantic -Wall -Wextra -Wconversion -g
 CXXFLAGS_WNO = -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion
@@ -104,17 +104,19 @@ example: $(OUTPUT)
 	@indir="example"; \
 	outdir="results"; \
 	if [ -d "$$indir" ]; then \
+		mkdir -p "asm"; \
 		if [ "$(SAVE)" = "1" ]; then mkdir -p "$$outdir"; fi; \
 		for f in "$$indir"/*.c "$$indir"/*.cm; do \
 			if [ -f "$$f" ]; then \
 				basefile=$$(basename "$$f"); \
+				outflag="-o asm/$${basefile%.*}.asm"; \
 				if [ "$(SAVE)" = "1" ]; then \
 					outfile="$$outdir/$${basefile%.*}.txt"; \
-					echo "=== Saving: ./$(OUTPUT) $(ARGS) $$f > $$outfile ==="; \
-					./$(OUTPUT) $(ARGS) "$$f" > "$$outfile"; \
+					echo "=== Saving: ./$(OUTPUT) $(ARGS) $$outflag $$f > $$outfile ==="; \
+					./$(OUTPUT) $(ARGS) $$outflag "$$f" > "$$outfile"; \
 				else \
-					echo "=== Running: ./$(OUTPUT) $(ARGS) $$f ==="; \
-					./$(OUTPUT) $(ARGS) "$$f"; \
+					echo "=== Running: ./$(OUTPUT) $(ARGS) $$outflag $$f ==="; \
+					./$(OUTPUT) $(ARGS) $$outflag "$$f"; \
 				fi; \
 			fi; \
 		done \
@@ -126,4 +128,4 @@ example: $(OUTPUT)
 clean:
 	rm -f $(OUTPUT) lex.yy.c parser.tab.c parser.tab.h parser.output
 
-.PHONY: all run-file run-dir clean
+.PHONY: all run-file run-dir clean example
