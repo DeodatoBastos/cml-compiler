@@ -33,7 +33,7 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 [-]?{digit}+                     { yylval.ival = atoi(yytext); return NUM; }
 {identifier}                     {
                                     yylval.sval = malloc(yyleng + 1);
-                                    memcpy(yylval.sval, yytext, yyleng+1);
+                                    memcpy(yylval.sval, yytext, yyleng + 1);
                                     return ID;
                                  }
 

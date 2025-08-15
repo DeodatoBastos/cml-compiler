@@ -79,12 +79,14 @@ decl: var_decl  { $$ = $1; }
 var_decl: type_spec ID SEMICOLON {
             $$ = new_expr_node(VarDecl, $2);
             $$->type = $1;
+            free($2);
         }
         | type_spec ID LBRACK NUM RBRACK SEMICOLON {
             $$ = new_expr_node(ArrDecl, $2);
             $$->type = $1;
             $$->child[0] = new_expr_node(Const, NULL);
             $$->child[0]->attr.val = $4;
+            free($2);
         }
 ;
 
@@ -101,6 +103,7 @@ func_decl: type_spec ID LPAREN params RPAREN compound_stmt {
             $$->type = $1;
             $$->child[0] = $4;
             $$->child[1] = $6;
+            free($2);
          }
 ;
 
@@ -125,10 +128,12 @@ param_list: param_list COMMA param {
 param: type_spec ID {
         $$ = new_expr_node(ParamVar, $2);
         $$->type = $1;
+        free($2);
      }
      | type_spec ID LBRACK RBRACK {
         $$ = new_expr_node(ParamArr, $2);
         $$->type = $1;
+        free($2);
      }
 ;
 
@@ -241,11 +246,13 @@ expr: var ASSIGN expr {
 var: ID {
     $$ = new_expr_node(Var, $1);
     $$->type = Integer;
+    free($1);
    }
    | ID LBRACK expr RBRACK {
     $$ = new_expr_node(Var, $1);
     $$->child[0] = $3;
     $$->type = Integer;
+    free($1);
    }
 ;
 
@@ -321,6 +328,7 @@ factor: LPAREN expr RPAREN {
 func_call: ID LPAREN args RPAREN {
             $$ = new_expr_node(FuncCall, $1);
             $$->child[0] = $3;
+            free($1);
          }
 ;
 
