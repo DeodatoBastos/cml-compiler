@@ -4,22 +4,22 @@ BISON=bison
 CC=gcc
 
 # Files
-LEX_SRC=scan.l
-BISON_SRC=parser.y
-MAIN_SRC=main.c
-UTILS_SRC=utils.c stack.c queue.c
-ANALYSIS_SRC=symtab.c analyze.c
-CODE_SRC=ir.c cgen.c
-LEX_C=lex.yy.c
-BISON_C=parser.tab.c
-BISON_H=parser.tab.h
-OUTPUT=cmc.out
+LEX_SRC=src/scan.l
+BISON_SRC=src/parser.y
+MAIN_SRC=src/main.c
+UTILS_SRC=src/utils.c src/stack.c src/queue.c
+ANALYSIS_SRC=src/symtab.c src/analyze.c
+CODE_SRC=src/ir.c src/cgen.c
+LEX_C=src/lex.yy.c
+BISON_C=src/parser.tab.c
+BISON_H=src/parser.tab.h
+OUTPUT=cml.out
 
 # Optional flags passed via ARGS
 ARGS ?=
 # ARGS=--ts --tp --ta
 
-CXXFLAGS = -std=c2x -pedantic -Wall -Wextra -Wconversion -g
+CXXFLAGS = -std=c2x -pedantic -Wall -Wextra -Wconversion -g -Isrc
 CXXFLAGS_WNO = -Wno-unused-parameter -Wno-unused-function -Wno-sign-conversion
 LDFLAGS = -lm -lfl
 # CXXFLAGS = -Werror -Wdouble-promotion -g3 -Wfloat-equal -fsanitize=leak,address -fsanitize-trap=undefined
@@ -30,14 +30,14 @@ all: $(OUTPUT)
 
 # Flex and Bison rules
 $(LEX_C): $(LEX_SRC)
-	$(FLEX) $(LEX_SRC)
+	$(LEX) -o $@ $<
 
 $(BISON_C) $(BISON_H): $(BISON_SRC)
-	$(BISON) -v -d $(BISON_SRC)
+	$(BISON) -v -d -o $(BISON_C) $(BISON_SRC)
 
 # Compile the frontend
 $(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
-	$(CC) -o $(OUTPUT) $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
+	$(CC) -o $@ $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
 
 # Run the program with a single file from the "example" directory
 example-file: $(OUTPUT)
@@ -126,6 +126,7 @@ example: $(OUTPUT)
 
 # Clean build files
 clean:
-	rm -f $(OUTPUT) lex.yy.c parser.tab.c parser.tab.h parser.output
+	rm -f $(OUTPUT) src/lex.yy.c src/parser.tab.c src/parser.tab.h src/parser.output
+	rm -rf asm results
 
 .PHONY: all run-file run-dir clean example

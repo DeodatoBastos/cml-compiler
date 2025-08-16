@@ -10,6 +10,7 @@
 #define SP_REGISTER -2
 #define A0_REGISTER -10
 #define A1_REGISTER -11
+#define A7_REGISTER -17
 #define X0_REGISTER 0
 #define FP_REGISTER -8
 #define RA_REGISTER -1
