@@ -7,7 +7,6 @@
 
 static void gen_code(ASTNode *node, IR *ir);
 static int calculate_local_size(ASTNode *node);
-static void gen_addr_code(ASTNode *node, IR *ir);
 static IRNode *gen_condition(ASTNode *node, IR *ir);
 
 static IRNode *func_end = NULL;
@@ -17,10 +16,11 @@ IR *gen_ir(ASTNode *tree) {
 
     ir_insert_prepare_stack(ir);
     ir_insert_comment(ir, "program entry: call main");
-    ir_insert_jump(ir, st_lookup("main", 0));
-    gen_code(tree, ir);
+    ir_insert_call(ir, "main");
     ir_insert_comment(ir, "syscall Exit (a7 = 10)");
     ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 10);
+    ir_insert_ecall(ir);
+    gen_code(tree, ir);
 
     return ir;
 }
@@ -39,14 +39,49 @@ void gen_code(ASTNode *node, IR *ir) {
             ir_insert_comment(ir, "leave compound block");
             break;
 
-        case Assign:
+        case Assign: {
             gen_code(node->child[1], ir);
             int rs2 = node->child[1]->temp_reg;
-            gen_addr_code(node->child[0], ir);
-            int rs1 = node->child[0]->temp_reg;
-            ir_insert_comment(ir, "store: mem[rs1] <- rs2");
-            ir_insert_store(ir, rs2, 0, rs1);
+            ASTNode *var_node = node->child[0];
+            BucketList *bucket = st_lookup(var_node->attr.name, var_node->scope);
+
+            // TODO: load bucket->address/offset into a register? (to big for 12 bits?)
+            if (var_node->scope == 0) {
+                // int base_addr_reg = register_new_temp(ir);
+                // ir_insert_li(ir, base_addr_reg, bucket->address);
+                if (var_node->child[0] == NULL) {
+                    ir_insert_comment(ir, "store: mem[addr] <- rs2");
+                    ir_insert_store(ir, rs2, bucket->address, X0_REGISTER);
+                    // ir_insert_store(ir, rs2, 0, base_addr_reg);
+                } else {
+                    gen_code(var_node->child[0], ir);
+                    int idx_reg = var_node->child[0]->temp_reg;
+                    int offset_reg = register_new_temp(ir);
+                    ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
+                    ir_insert_comment(ir, "store: mem[addr+rs1] <- rs2");
+                    ir_insert_store(ir, rs2, bucket->address, offset_reg);
+                    // int addr_reg = register_new_temp(ir);
+                    // ir_insert_add(ir, addr_reg, base_addr_reg, offset_reg);
+                    // ir_insert_comment(ir, "store: mem[rs1] <- rs2");
+                    // ir_insert_store(ir, rs2, 0, addr_reg);
+                }
+            } else {
+                if (var_node->child[0] == NULL) {
+                    ir_insert_comment(ir, "store: mem[offset+fp] <- rs2");
+                    ir_insert_store(ir, rs2, bucket->offset, FP_REGISTER);
+                } else {
+                    gen_code(var_node->child[0], ir);
+                    int idx_reg = var_node->child[0]->temp_reg;
+                    int offset_reg = register_new_temp(ir);
+                    ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
+                    int addr_reg = register_new_temp(ir);
+                    ir_insert_add(ir, addr_reg, FP_REGISTER, offset_reg);
+                    ir_insert_comment(ir, "store: mem[offset+rs1] <- rs2");
+                    ir_insert_store(ir, rs2, bucket->offset, addr_reg);
+                }
+            }
             break;
+        }
 
         case If: {
             IRNode *end_if = new_ir_node(NOP);
@@ -100,7 +135,7 @@ void gen_code(ASTNode *node, IR *ir) {
             break;
         }
 
-        case Return:
+        case Return: {
             if (node->child[0] != NULL) {
                 gen_code(node->child[0], ir);
                 ir_insert_comment(ir, "a0 <- rs1");
@@ -109,22 +144,62 @@ void gen_code(ASTNode *node, IR *ir) {
             ir_insert_comment(ir, "jump to function epilogue");
             ir_insert_rel_jump(ir, func_end);
             break;
+        }
 
-        case Read:
-            gen_code(node->child[0], ir);
+        case Read: {
             ir_insert_comment(ir, "syscall ReadInt (a7 = 5)");
-            ir_insert_addi(ir, A0_REGISTER, X0_REGISTER, 5);
+            ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 5);
             ir_insert_ecall(ir);
-            ir_insert_mov(ir, node->child[0]->temp_reg, A0_REGISTER);
-            break;
 
-        case Write:
+            ASTNode *var_node = node->child[0];
+            BucketList *bucket = st_lookup(var_node->attr.name, var_node->scope);
+
+            // TODO: load bucket->address/offset into a register? (to big for 12 bits?)
+            if (var_node->scope == 0) {
+                // int base_addr_reg = register_new_temp(ir);
+                // ir_insert_li(ir, base_addr_reg, bucket->address);
+                if (var_node->child[0] == NULL) {
+                    ir_insert_comment(ir, "store: mem[addr] <- rs2");
+                    ir_insert_store(ir, A0_REGISTER, bucket->address, X0_REGISTER);
+                    // ir_insert_store(ir, rs2, 0, base_addr_reg);
+                } else {
+                    gen_code(var_node->child[0], ir);
+                    int idx_reg = var_node->child[0]->temp_reg;
+                    int offset_reg = register_new_temp(ir);
+                    ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
+                    ir_insert_comment(ir, "store: mem[addr+rs1] <- rs2");
+                    ir_insert_store(ir, A0_REGISTER, bucket->address, offset_reg);
+                    // int addr_reg = register_new_temp(ir);
+                    // ir_insert_add(ir, addr_reg, base_addr_reg, offset_reg);
+                    // ir_insert_comment(ir, "store: mem[rs1] <- rs2");
+                    // ir_insert_store(ir, rs2, 0, addr_reg);
+                }
+            } else {
+                if (var_node->child[0] == NULL) {
+                    ir_insert_comment(ir, "store: mem[offset+fp] <- rs2");
+                    ir_insert_store(ir, A0_REGISTER, bucket->offset, FP_REGISTER);
+                } else {
+                    gen_code(var_node->child[0], ir);
+                    int idx_reg = var_node->child[0]->temp_reg;
+                    int offset_reg = register_new_temp(ir);
+                    ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
+                    int addr_reg = register_new_temp(ir);
+                    ir_insert_add(ir, addr_reg, FP_REGISTER, offset_reg);
+                    ir_insert_comment(ir, "store: mem[offset+rs1] <- rs2");
+                    ir_insert_store(ir, A0_REGISTER, bucket->offset, addr_reg);
+                }
+            }
+            break;
+        }
+
+        case Write: {
             gen_code(node->child[0], ir);
             ir_insert_comment(ir, "syscall PrintInt (a7 = 1, a0 = rs1)");
             ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 1);
             ir_insert_mov(ir, A0_REGISTER, node->child[0]->temp_reg);
             ir_insert_ecall(ir);
             break;
+        }
 
         case Root:
             break;
@@ -173,10 +248,44 @@ void gen_code(ASTNode *node, IR *ir) {
 
         case Var:
         case Arr: {
-            gen_addr_code(node, ir);
-            int addr_reg = node->temp_reg;
+            BucketList *bucket = st_lookup(node->attr.name, node->scope);
             int value_reg = register_new_temp(ir);
-            ir_insert_load(ir, value_reg, 0, addr_reg);
+
+            // TODO: load bucket->address/offset into a register? (to big for 12 bits?)
+            if (node->scope == 0) {
+                // int base_addr_reg = register_new_temp(ir);
+                // ir_insert_li(ir, base_addr_reg, bucket->address);
+                if (node->child[0] == NULL) {
+                    ir_insert_comment(ir, "load: rd <- mem[addr]");
+                    ir_insert_load(ir, value_reg, bucket->address, X0_REGISTER);
+                    // ir_insert_load(ir, value_reg, 0, base_addr_reg);
+                } else {
+                    gen_code(node->child[0], ir);
+                    int idx_reg = node->child[0]->temp_reg;
+                    int offset_reg = register_new_temp(ir);
+                    ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
+                    ir_insert_comment(ir, "load: rd <- mem[addr+rs1]");
+                    ir_insert_load(ir, value_reg, bucket->address, offset_reg);
+                    // int addr_reg = register_new_temp(ir);
+                    // ir_insert_add(ir, addr_reg, base_addr_reg, offset_reg);
+                    // ir_insert_comment(ir, "load: rd <- mem[rs1]");
+                    // ir_insert_load(ir, rs2, 0, addr_reg);
+                }
+            } else {
+                if (node->child[0] == NULL) {
+                    ir_insert_comment(ir, "load: rd <- mem[offset+fp]");
+                    ir_insert_load(ir, value_reg, bucket->offset, FP_REGISTER);
+                } else {
+                    gen_code(node->child[0], ir);
+                    int idx_reg = node->child[0]->temp_reg;
+                    int offset_reg = register_new_temp(ir);
+                    ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
+                    int addr_reg = register_new_temp(ir);
+                    ir_insert_add(ir, addr_reg, FP_REGISTER, offset_reg);
+                    ir_insert_comment(ir, "load: rd <- mem[offset+rs1]");
+                    ir_insert_load(ir, value_reg, bucket->offset, addr_reg);
+                }
+            }
             node->temp_reg = value_reg;
 
             break;
@@ -234,26 +343,20 @@ void gen_code(ASTNode *node, IR *ir) {
 
                 if (arg->kind.expr == Arr && arg->child[0] == NULL) {
                     ir_insert_comment(ir, "push array arg");
-                    gen_addr_code(arg, ir);
+                    BucketList *bucket = st_lookup(arg->attr.name, arg->scope);
+                    int addr_reg = register_new_temp(ir);
+                    if (arg->scope == 0) {
+                        ir_insert_comment(ir, "load adddres: rd <- addr");
+                        ir_insert_li(ir, addr_reg, bucket->address);
+                    } else {
+                        ir_insert_comment(ir, "store: mem[offset+fp] <- rs2");
+                        ir_insert_load(ir, addr_reg, bucket->offset, FP_REGISTER);
+                    }
+                    arg->temp_reg = addr_reg;
                 } else {
                     ir_insert_comment(ir, "push other arg");
                     gen_code(arg, ir);
                 }
-
-                // if ((arg->kind.expr == Arr || arg->kind.expr == Var) && arg->child[0] == NULL) {
-                //     BucketList *bucket = st_lookup(arg->attr.name, arg->scope);
-                //     if (bucket != NULL && (bucket->node->kind.expr == ArrDecl ||
-                //                            bucket->node->kind.expr == ParamArr)) {
-                //         ir_insert_comment(ir, "push arr arg");
-                //         gen_addr_code(arg, ir);
-                //     } else {
-                //         ir_insert_comment(ir, "push var arg");
-                //         gen_code(arg, ir);
-                //     }
-                // } else {
-                //     ir_insert_comment(ir, "push other arg");
-                //     gen_code(arg, ir);
-                // }
 
                 arg->sibling = next_arg;
 
@@ -314,31 +417,6 @@ static int calculate_local_size(ASTNode *node) {
     }
 
     return size;
-}
-
-static void gen_addr_code(ASTNode *node, IR *ir) {
-    if (node == NULL)
-        return;
-
-    BucketList *bucket = st_lookup(node->attr.name, node->scope);
-    int addr_reg = register_new_temp(ir);
-
-    if (node->scope == 0) {
-        ir_insert_load(ir, addr_reg, bucket->address, X0_REGISTER);
-    } else {
-        ir_insert_addi(ir, addr_reg, FP_REGISTER, bucket->offset);
-    }
-
-    if (node->child[0] != NULL) {
-        gen_code(node->child[0], ir);
-        int idx_reg = node->child[0]->temp_reg;
-
-        int offset_reg = register_new_temp(ir);
-        ir_insert_slli(ir, offset_reg, idx_reg, 2); // 4-byte integer
-        ir_insert_add(ir, addr_reg, addr_reg, offset_reg);
-    }
-
-    node->temp_reg = addr_reg;
 }
 
 static IRNode *gen_condition(ASTNode *node, IR *ir) {

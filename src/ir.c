@@ -100,6 +100,8 @@ static void print_register(FILE *out, int reg) {
         fprintf(out, "a0");
     else if (reg == A1_REGISTER)
         fprintf(out, "a1");
+    else if (reg == A7_REGISTER)
+        fprintf(out, "a7");
     else if (reg == T0_REGISTER)
         fprintf(out, "t0");
     else if (reg == X0_REGISTER)
@@ -145,18 +147,11 @@ void print_ir(IR *ir, FILE *out) {
                 break;
 
             case LOAD:
-                print_register(out, node->dest);
-                fprintf(out, ", ");
-                if (node->src_kind == VAR_SRC)
-                    fprintf(out, "%s(", node->var_src->node->attr.name);
-                else
-                    fprintf(out, "%d(", node->imm);
-                print_register(out, node->src1);
-                fprintf(out, ")");
-                break;
-
             case STORE:
-                print_register(out, node->src2);
+                if (node->instruction == LOAD)
+                    print_register(out, node->dest);
+                else
+                    print_register(out, node->src2);
                 fprintf(out, ", ");
                 if (node->src_kind == VAR_SRC)
                     fprintf(out, "%s(", node->var_src->node->attr.name);

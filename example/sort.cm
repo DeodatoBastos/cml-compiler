@@ -1,4 +1,5 @@
 /* ordenacao por selecao */
+int y[10];
 int x[10];
 
 int minloc ( int a[], int low, int high ){
@@ -34,12 +35,14 @@ void main(void){
     i = 0;
     while(i<10){
         x[i] = input();
+        y[i] = x[i] + 1;
         i = i + 1;
     }
     sort(x,0,10);
     i = 0;
     while(i<10){
         output(x[i]);
+        output(y[i]);
         i = i + 1;
     }
 }
