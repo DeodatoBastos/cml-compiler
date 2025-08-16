@@ -15,6 +15,8 @@ BISON_C=src/parser.tab.c
 BISON_H=src/parser.tab.h
 OUTPUT=cml.out
 
+EXAMPLES := $(wildcard example/*.c example/*.cm)
+
 # Optional flags passed via ARGS
 ARGS ?=
 # ARGS=--ts --tp --ta
@@ -53,51 +55,43 @@ example-file: $(OUTPUT)
 
 # Run the program with a single file chosen from the "example" directory
 run-file: $(OUTPUT)
-	@indir="example"; \
-	i=0; \
-	for f in "$$indir"/*.c "$$indir"/*.cm; do \
-		[ -f "$$f" ] || continue; \
-		echo "[$$i] $$f"; \
-		eval "file_$$i='$$f'"; \
-		i=$$((i+1)); \
+	@files="$(EXAMPLES)"; \
+	count=1; \
+	for f in $$files; do \
+		echo "[$$count] $$f"; \
+		count=$$((count+1)); \
 	done; \
-	if [ "$$i" -eq 0 ]; then \
-		echo "No .c or .cm files found in $$indir."; \
+	read -p "Select a file number: " choice; \
+	selected=$$(echo $$files | cut -d' ' -f$$choice); \
+	if [ -z "$$selected" ]; then \
+		echo "Invalid choice"; \
 		exit 1; \
 	fi; \
-	read -p "Enter the number of the file to run: " idx; \
-	eval "selected=\$$file_$$idx"; \
-	if [ -n "$$selected" ]; then \
-		echo "=== Running: ./$(OUTPUT) $(ARGS) $$selected ==="; \
-		./$(OUTPUT) $(ARGS) "$$selected"; \
-	else \
-		echo "Invalid selection."; \
-		exit 1; \
-	fi
+	mkdir -p asm; \
+	basefile=$$(basename $$selected); \
+	outflag="-o asm/$${basefile%.*}.asm"; \
+	echo "=== Running: ./$(OUTPUT) $$outflag $$selected ==="; \
+	./$(OUTPUT) $$outflag "$$selected"
 
 # Run the program with Valgrind on a selected file from "example"
 debug: $(OUTPUT)
-	@indir="example"; \
-	i=0; \
-	for f in "$$indir"/*.c "$$indir"/*.cm; do \
-		[ -f "$$f" ] || continue; \
-		echo "[$$i] $$f"; \
-		eval "file_$$i='$$f'"; \
-		i=$$((i+1)); \
+	@files="$(EXAMPLES)"; \
+	count=1; \
+	for f in $$files; do \
+		echo "[$$count] $$f"; \
+		count=$$((count+1)); \
 	done; \
-	if [ "$$i" -eq 0 ]; then \
-		echo "No .c or .cm files found in $$indir."; \
+	read -p "Select a file number: " choice; \
+	selected=$$(echo $$files | cut -d' ' -f$$choice); \
+	if [ -z "$$selected" ]; then \
+		echo "Invalid choice"; \
 		exit 1; \
 	fi; \
-	read -p "Enter the number of the file to run with Valgrind: " idx; \
-	eval "selected=\$$file_$$idx"; \
-	if [ -n "$$selected" ]; then \
-		echo "=== Running under Valgrind: ./$(OUTPUT) $(ARGS) $$selected ==="; \
-		valgrind --leak-check=full --track-origins=yes ./$(OUTPUT) $(ARGS) "$$selected"; \
-	else \
-		echo "Invalid selection."; \
-		exit 1; \
-	fi
+	mkdir -p asm; \
+	basefile=$$(basename $$selected); \
+	outflag="-o asm/$${basefile%.*}.asm"; \
+	echo "=== Debugging with Valgrind: valgrind ./$(OUTPUT) $$outflag $$selected ==="; \
+	valgrind ./$(OUTPUT) $$outflag "$$selected"
 
 # Run the program on all files in the "example" directory, optionally saving output
 example: $(OUTPUT)
