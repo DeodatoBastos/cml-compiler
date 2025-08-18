@@ -5,10 +5,15 @@
 #include "symtab.h"
 #include <stdlib.h>
 
+// Forward declarations for static helper functions
 static void gen_code(ASTNode *node, IR *ir);
 static int calculate_local_size(ASTNode *node);
 static IRNode *gen_condition(ASTNode *node, IR *ir);
 
+/**
+ * @brief A global pointer to the end label of the current function being generated.
+ * This is used by 'return' statements to know where the function's epilogue is.
+ */
 static IRNode *func_end = NULL;
 
 IR *gen_ir(ASTNode *tree) {
@@ -25,6 +30,14 @@ IR *gen_ir(ASTNode *tree) {
     return ir;
 }
 
+/**
+ * @brief Main entry point for the code generation phase.
+ * It initializes the IR, creates a program header to call 'main' and then exit,
+ * and then starts the recursive traversal of the AST.
+ *
+ * @param tree The root of the AST.
+ * @return A pointer to the generated IR.
+ */
 void gen_code(ASTNode *node, IR *ir) {
     if (node == NULL)
         return;
@@ -45,7 +58,8 @@ void gen_code(ASTNode *node, IR *ir) {
             ASTNode *var_node = node->child[0];
             BucketList *bucket = st_lookup(var_node->attr.name, var_node->scope);
 
-            // TODO: load bucket->address/offset into a register? (to big for 12 bits?)
+            // TODO: should I load bucket->address/offset into a register?
+            // (to big for 12 bits [-2048,2047] ?)
             if (var_node->scope == 0) {
                 // int base_addr_reg = register_new_temp(ir);
                 // ir_insert_li(ir, base_addr_reg, bucket->address);
@@ -154,7 +168,8 @@ void gen_code(ASTNode *node, IR *ir) {
             ASTNode *var_node = node->child[0];
             BucketList *bucket = st_lookup(var_node->attr.name, var_node->scope);
 
-            // TODO: load bucket->address/offset into a register? (to big for 12 bits?)
+            // TODO: should I load bucket->address/offset into a register?
+            // (to big for 12 bits [-2048,2047] ?)
             if (var_node->scope == 0) {
                 // int base_addr_reg = register_new_temp(ir);
                 // ir_insert_li(ir, base_addr_reg, bucket->address);
@@ -251,7 +266,8 @@ void gen_code(ASTNode *node, IR *ir) {
             BucketList *bucket = st_lookup(node->attr.name, node->scope);
             int value_reg = register_new_temp(ir);
 
-            // TODO: load bucket->address/offset into a register? (to big for 12 bits?)
+            // TODO: should I load bucket->address/offset into a register?
+            // (to big for 12 bits [-2048,2047] ?)
             if (node->scope == 0) {
                 // int base_addr_reg = register_new_temp(ir);
                 // ir_insert_li(ir, base_addr_reg, bucket->address);
@@ -346,11 +362,16 @@ void gen_code(ASTNode *node, IR *ir) {
                     BucketList *bucket = st_lookup(arg->attr.name, arg->scope);
                     int addr_reg = register_new_temp(ir);
                     if (arg->scope == 0) {
-                        ir_insert_comment(ir, "load adddres: rd <- addr");
+                        ir_insert_comment(ir, "load global adddres: rd <- addr");
                         ir_insert_li(ir, addr_reg, bucket->address);
                     } else {
-                        ir_insert_comment(ir, "store: mem[offset+fp] <- rs2");
-                        ir_insert_load(ir, addr_reg, bucket->offset, FP_REGISTER);
+                        if (bucket->node->kind.expr == ParamArr) {
+                            ir_insert_comment(ir, "load address from arg: rd <- mem[offset+fp]");
+                            ir_insert_load(ir, addr_reg, bucket->offset, FP_REGISTER);
+                        } else {
+                            ir_insert_comment(ir, "load local address: rd <- fp+offset");
+                            ir_insert_addi(ir, addr_reg, FP_REGISTER, bucket->offset);
+                        }
                     }
                     arg->temp_reg = addr_reg;
                 } else {
@@ -392,6 +413,12 @@ void gen_code(ASTNode *node, IR *ir) {
     gen_code(node->sibling, ir);
 }
 
+/**
+ * @brief Recursively traverses the AST to generate IR code for each node.
+ *
+ * @param node The current AST node to process.
+ * @param ir The IR structure to append new instructions to.
+ */
 static int calculate_local_size(ASTNode *node) {
     if (node == NULL)
         return 0;
@@ -419,6 +446,13 @@ static int calculate_local_size(ASTNode *node) {
     return size;
 }
 
+/**
+ * @brief Generates the conditional branch instruction for an 'if' or 'while' statement.
+ *
+ * @param node The expression node representing the condition.
+ * @param ir The IR structure.
+ * @return A pointer to the generated branch instruction, to be used for backpatching.
+ */
 static IRNode *gen_condition(ASTNode *node, IR *ir) {
     gen_code(node->child[0], ir);
     gen_code(node->child[1], ir);

@@ -1,8 +1,17 @@
 /* ordenacao por selecao */
-int y[10];
 int x[10];
+int len;
 
-int minloc ( int a[], int low, int high ){
+void print_arr(int a[], int n) {
+    int i;
+    i = 0;
+    while (i < n) {
+        output(a[i]);
+        i = i + 1;
+    }
+}
+
+int minloc (int a[], int low, int high){
     int i; int x; int k;
     k = low;
     x = a[low];
@@ -32,17 +41,19 @@ void sort(int a[], int low, int high){
 
 void main(void){
     int i;
+    int y[10];
     i = 0;
-    while(i<10){
+    len = 10;
+
+    while(i<len){
         x[i] = input();
         y[i] = x[i] + 1;
         i = i + 1;
     }
-    sort(x,0,10);
+
+    sort(x, 0, len);
     i = 0;
-    while(i<10){
-        output(x[i]);
-        output(y[i]);
-        i = i + 1;
-    }
+
+    print_arr(x, len);
+    print_arr(y, len);
 }
