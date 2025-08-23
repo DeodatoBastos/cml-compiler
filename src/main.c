@@ -28,6 +28,8 @@ bool TraceCode = false;
 
 bool Error = false;
 
+extern void yylex_destroy();
+
 int main(int argc, char **argv) {
     char program[128] = {0};
     char out_file[256] = {0};
@@ -121,6 +123,7 @@ int main(int argc, char **argv) {
     if (Error) {
         fclose(source);
         fclose(code);
+        yylex_destroy();
         return 1;
     }
 
@@ -135,8 +138,10 @@ int main(int argc, char **argv) {
 
     if (Error) {
         free_symtab();
+        free_ast(tree);
         fclose(source);
         fclose(code);
+        yylex_destroy();
         return 1;
     }
 
@@ -149,5 +154,6 @@ int main(int argc, char **argv) {
     free_ir(ir);
     free_symtab();
     free_ast(tree);
+    yylex_destroy();
     return 0;
 }
