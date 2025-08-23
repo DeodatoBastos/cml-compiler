@@ -2,13 +2,13 @@
 
 #define YYPARSER /* distinguishes Yacc output from other code files */
 
-#include <stdio.h>
-#include <stdbool.h>
-#include "ast.h"
+#include "frontend/parse.h"
+#include "frontend/scan.h"
 #include "global.h"
-#include "utils.h"
-#include "scan.h"
-#include "parse.h"
+#include "utils/ast.h"
+#include "utils/utils.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 int yyerror(const char *s);
 static int yylex();

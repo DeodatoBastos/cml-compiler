@@ -1,9 +1,9 @@
 %{
 
-#include <stdbool.h>
+#include "frontend/scan.h"
 #include "global.h"
-#include "utils.h"
-#include "scan.h"
+#include "utils/utils.h"
+#include <stdbool.h>
 
 TokenType get_token(void);
 

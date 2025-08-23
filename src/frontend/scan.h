@@ -4,7 +4,7 @@
 /* MAXTOKENLEN is the maximum size of a token */
 #define MAXTOKENLEN 40
 
-#include "ast.h"
+#include "../utils/ast.h"
 
 /* tokenString array stores the lexeme of each token */
 extern char tokenString[MAXTOKENLEN+1];

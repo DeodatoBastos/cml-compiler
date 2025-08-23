@@ -1,7 +1,9 @@
 #ifndef REG_ALLOCATION
 #define REG_ALLOCATION
 
-#include "ir.h"
+#include "../utils/ir.h"
+
+#define K 4
 
 /**
  * @brief Allocates physical registers using a graph-coloring algorithm.

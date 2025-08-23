@@ -1,15 +1,12 @@
 #include "reg_allocation.h"
-#include "bitset.h"
-#include "global.h"
-#include "ir.h"
-#include "stack.h"
+#include "../global.h"
+#include "../utils/bitset.h"
+#include "../utils/ir.h"
+#include "../utils/stack.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define K 4
-// static const int PHYSICAL_REGS[K] = {-5, -6, -7, -28, -29, -30, -31}; // t0-t6
 
 typedef struct AdjListNode {
     int value;
@@ -22,15 +19,6 @@ typedef struct InterferenceGraph {
     bool **adj_matrix;
     AdjListNode **adj_list;
 } InterferenceGraph;
-
-// static void compute_use_def(IRNode *node, BitSet *use, BitSet *def) {
-//     if (node->src1 > 0)
-//         bitset_set(use, node->src1);
-//     if (node->src2 > 0)
-//         bitset_set(use, node->src2);
-//     if (node->dest > 0)
-//         bitset_set(def, node->dest);
-// }
 
 static void liveness_analysis(IR *ir) {
     int num_temps = ir->next_temp_reg;
@@ -57,14 +45,6 @@ static void liveness_analysis(IR *ir) {
                 else
                     bitset_union(new_out, node->target->live_in);
             }
-
-            // BitSet *use = new_bitset(num_temps);
-            // BitSet *def = new_bitset(num_temps);
-            // compute_use_def(node, use, def);
-            // // `in[v]` <-  use(v) U (`out[v]` - def(v))
-            // BitSet *new_in = bitset_copy(new_out);
-            // bitset_union(new_in, use);
-            // bitset_diff(new_in, def);
 
             // `in[v]` <-  use(v) U (`out[v]` - def(v))
             BitSet *new_in = new_out == NULL ? new_bitset(num_temps) : bitset_copy(new_out);
@@ -240,14 +220,14 @@ static int *color_graph(InterferenceGraph *g, int num_temps, int num_colors) {
 int *allocate_registers(IR *ir) {
     int num_temps = ir->next_temp_reg;
     InterferenceGraph *g = build_graph(ir);
-    print_graph(g);
+    // print_graph(g);
     int *color_map = color_graph(g, num_temps, K);
 
-    printf("Color map: ");
-    for (int i = 0; i < num_temps; i++) {
-        printf("%d ", color_map[i]);
-    }
-    printf("\n");
+    // printf("Color map: ");
+    // for (int i = 0; i < num_temps; i++) {
+    //     printf("%d ", color_map[i]);
+    // }
+    // printf("\n");
 
     destroy_graph(g);
 

@@ -20,16 +20,16 @@ BISON_H := $(SRC_DIR)/parser.tab.h
 BISON_O := $(SRC_DIR)/parser.output
 ALL_C := $(shell find $(SRC_DIR) -type f -name '*.c')
 SRC   := $(filter-out $(LEX_C) $(BISON_C),$(ALL_C))
-HEADERS := $(wildcard src/*.h)
+HEADERS := $(wildcard src/*/*.h)
 EXAMPLES := $(wildcard example/*.c example/*.cm)
 
 # Default rule
 all: $(OUTPUT)
 
-$(LEX_C): $(SRC_DIR)/scan.l
+$(LEX_C): $(SRC_DIR)/frontend/scan.l
 	$(FLEX) --yylineno -o $@ $<
 
-$(BISON_C) $(BISON_H): $(SRC_DIR)/parser.y
+$(BISON_C) $(BISON_H): $(SRC_DIR)/frontend/parser.y
 	$(BISON) -v -d -o $(BISON_C) $<
 
 $(OUTPUT): $(SRC) $(HEADERS) $(LEX_C) $(BISON_H) $(BISON_C)

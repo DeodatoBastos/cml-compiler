@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "ast.h"
+#include "utils/ast.h"
 
 #ifndef YYPARSER
 

@@ -1,8 +1,8 @@
 #include "cgen.h"
-#include "ast.h"
-#include "ir.h"
-#include "parser.tab.h"
-#include "symtab.h"
+#include "../parser.tab.h"
+#include "../utils/ast.h"
+#include "../utils/ir.h"
+#include "../utils/symtab.h"
 #include <stdlib.h>
 
 // Forward declarations for static helper functions

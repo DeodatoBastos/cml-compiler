@@ -5,16 +5,13 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "cgen.h"
-#include "global.h"
-#include "ir.h"
-#include "reg_allocation.h"
-#include "symtab.h"
-#include "utils.h"
-// #include "scan.h"
-#include "analyze.h"
-#include "cgen.h"
-#include "parse.h"
+#include "backend/cgen.h"
+#include "backend/reg_allocation.h"
+#include "frontend/analyze.h"
+#include "frontend/parse.h"
+#include "utils/ir.h"
+#include "utils/symtab.h"
+#include "utils/utils.h"
 
 /* allocate global variables */
 FILE *source;
@@ -122,6 +119,7 @@ int main(int argc, char **argv) {
     }
 
     if (Error) {
+        remove(out_file);
         fclose(source);
         fclose(code);
         yylex_destroy();
@@ -140,9 +138,10 @@ int main(int argc, char **argv) {
     if (Error) {
         free_symtab();
         free_ast(tree);
+        yylex_destroy();
+        remove(out_file);
         fclose(source);
         fclose(code);
-        yylex_destroy();
         return 1;
     }
 

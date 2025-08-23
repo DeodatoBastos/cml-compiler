@@ -1,10 +1,10 @@
 #include "analyze.h"
-#include "ast.h"
-#include "global.h"
-#include "queue.h"
-#include "stack.h"
-#include "symtab.h"
-#include "utils.h"
+#include "../global.h"
+#include "../utils/ast.h"
+#include "../utils/queue.h"
+#include "../utils/stack.h"
+#include "../utils/symtab.h"
+#include "../utils/utils.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>

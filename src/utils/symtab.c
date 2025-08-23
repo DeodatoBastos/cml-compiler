@@ -1,6 +1,5 @@
 #include "symtab.h"
 #include "ast.h"
-#include "global.h"
 #include "utils.h"
 #include <stdbool.h>
 #include <stdio.h>

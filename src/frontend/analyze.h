@@ -1,7 +1,7 @@
 #ifndef ANALYZE_H
 #define ANALYZE_H
 
-#include "ast.h"
+#include "../utils/ast.h"
 
 /* Function build_symtab constructs the symbol 
  * table by preorder traversal of the syntax tree

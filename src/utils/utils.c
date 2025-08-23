@@ -1,7 +1,6 @@
 #include "utils.h"
+#include "../global.h"
 #include "ast.h"
-#include "global.h"
-#include "parser.tab.h"
 #include "queue.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,9 +1,8 @@
 #ifndef CGEN_H
 #define CGEN_H
 
-#include "ast.h"
-#include "ir.h"
-#include "symtab.h"
+#include "../utils/ast.h"
+#include "../utils/ir.h"
 
 /**
  * @brief Generates the Intermediate Representation (IR) from an Abstract Syntax Tree (AST).

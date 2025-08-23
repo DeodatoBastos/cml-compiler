@@ -1,7 +1,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include "ast.h"
+#include "../utils/ast.h"
 
 ASTNode *parse(void);
 

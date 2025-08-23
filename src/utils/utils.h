@@ -61,5 +61,4 @@ void replace_ext(char *dest, const char *src, const char *new_ext);
 
 int get_size(ExprType type);
 
-
 #endif
