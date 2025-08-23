@@ -137,6 +137,7 @@ static void insert_node(ASTNode *n) {
                 /* already in table, so ignore location,
                  add line number of use only */
                 n->scope = bucket->scope;
+                n->type = bucket->node->type;
                 st_insert(n, bucket->scope, -1, 0);
                 if ((bucket->node->kind.expr == ArrDecl) || (bucket->node->kind.expr == ParamArr))
                     n->kind.expr = Arr;

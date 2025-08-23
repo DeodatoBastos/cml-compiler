@@ -32,13 +32,13 @@ AST *new_ast() {
 ASTNode *new_stmt_node(StmtKind kind, const char *name) {
     ASTNode *n = (ASTNode *)malloc(sizeof(ASTNode));
     if (n == NULL) {
-        fprintf(listing, "Out of memory error at line %d\n", lineno);
+        fprintf(listing, "Out of memory error at line %d\n", yylineno);
         return NULL;
     }
 
     n->node_kind = Stmt;
     n->kind.stmt = kind;
-    n->lineno = lineno;
+    n->lineno = yylineno;
     n->temp_reg = 0;
     n->attr.name = name ? strdup(name) : NULL;
 
@@ -55,13 +55,13 @@ ASTNode *new_stmt_node(StmtKind kind, const char *name) {
 ASTNode *new_expr_node(ExprKind kind, const char *name) {
     ASTNode *n = (ASTNode *)malloc(sizeof(ASTNode));
     if (n == NULL) {
-        fprintf(listing, "Out of memory error at line %d\n", lineno);
+        fprintf(listing, "Out of memory error at line %d\n", yylineno);
         return NULL;
     }
 
     n->node_kind = Expr;
     n->kind.expr = kind;
-    n->lineno = lineno;
+    n->lineno = yylineno;
     n->attr.name = name ? strdup(name) : NULL;
 
     n->sibling = NULL;
@@ -241,7 +241,7 @@ void print_tree(ASTNode *node, int depth) {
  * ast
  */
 void free_ast(ASTNode *node) {
-    if (!node)
+    if (node == NULL)
         return;
 
     if (node->attr.name != NULL &&

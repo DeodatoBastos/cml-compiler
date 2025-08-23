@@ -9,9 +9,9 @@ TokenType get_token(void);
 
 char tokenString[MAXTOKENLEN+1];
 
-// %option yylineno
 %}
 
+%option yylineno
 %option noyywrap
 
 alpha      [a-zA-Z]
@@ -62,17 +62,12 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 "="                              { return ASSIGN; }
 
 "//".*                          { /* skip comment */ }
-"/*"([^*]|\*+[^*/])*"*"+"/"     { /* ignore multi-line comment */
-                                    for (char *p = yytext; *p; p++) {
-                                        if (*p == '\n') lineno++;
-                                    }
-                                }
+"/*"([^*]|\*+[^*/])*"*"+"/"     { /* ignore multi-line comment */}
 [ \t\r]+                        { /* skip whitespace */ }
-
-\n                              { lineno++; }
+\n                              { /* skip new line */ }
 
 .                               {
-                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", lineno, yytext);
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
                                     Error = true;
                                     return ERROR;
                                 }
@@ -84,14 +79,13 @@ TokenType get_token(void) {
     TokenType currentToken;
     if (firstTime) {
         firstTime = false;
-        lineno++;
         yyin = source;
         yyout = listing;
     }
     currentToken = yylex();
     strncpy(tokenString, yytext, MAXTOKENLEN);
     if (TraceScan) {
-        fprintf(listing, "\t%d: ", lineno);
+        fprintf(listing, "\t%d: ", yylineno);
         print_token(currentToken, yytext);
     }
     return currentToken;

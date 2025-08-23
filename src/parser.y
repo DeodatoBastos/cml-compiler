@@ -12,9 +12,10 @@
 
 int yyerror(const char *s);
 static int yylex();
+extern int yylineno;
+extern char* yytext;
 
 static ASTNode *root;
-// static AST *tree;
 
 %}
 
@@ -48,12 +49,11 @@ static ASTNode *root;
 %type  <type> type_spec
 
 %destructor { free($$); } <sval>
+%destructor { if(Error) free_ast($$); } <node>
 
 %%
 
 program: decl_list {
-       // tree = new_ast();
-       // tree->root->child[0] = $1;
        root = $1;
 }
 ;
@@ -327,6 +327,7 @@ factor: LPAREN expr RPAREN {
 
 func_call: ID LPAREN args RPAREN {
             $$ = new_expr_node(FuncCall, $1);
+            $$->type = Void;
             $$->child[0] = $3;
             free($1);
          }
@@ -357,7 +358,8 @@ arg_list: arg_list COMMA expr {
 %%
 
 int yyerror(const char *msg) {
-    fprintf(listing, "\033[1;31mError\033[0m at line %d: %s\n", lineno, msg);
+    fprintf(listing, "\033[1;31mError\033[0m at line %d: %s\n", yylineno, msg);
+    fprintf(listing, "\033[1;31mError\033[0m at line %d: %s\n", yylineno, yytext);
     fprintf(listing, "Current token: ");
     print_token(yychar, tokenString);
     Error = true;
@@ -371,5 +373,4 @@ static int yylex(void) {
 ASTNode *parse(void) {
     yyparse();
     return root;
-    // return tree;
 }

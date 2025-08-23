@@ -5,6 +5,9 @@
 #include "queue.h"
 #include <stdlib.h>
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
 /* Function new_ast creates a new Abstract Syntax Tree
  */
 AST *new_ast();
@@ -57,5 +60,6 @@ void print_help(const char *program_name);
 void replace_ext(char *dest, const char *src, const char *new_ext);
 
 int get_size(ExprType type);
+
 
 #endif
