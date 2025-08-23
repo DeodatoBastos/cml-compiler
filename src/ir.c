@@ -1,4 +1,5 @@
 #include "ir.h"
+#include "bitset.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -237,6 +238,8 @@ void free_ir(IR *ir) {
     IRNode *next = NULL;
     while (node != NULL) {
         next = node->next;
+        destroy_biset(node->live_in);
+        destroy_biset(node->live_out);
         free(node);
         node = next;
     }
@@ -250,6 +253,8 @@ IRNode *new_ir_node(Instruction instruction) {
     node->prev = NULL;
     node->target = NULL;
     node->var_src = NULL;
+    node->live_in = NULL;
+    node->live_out = NULL;
     node->instruction = instruction;
     node->src_kind = CONST_SRC;
     node->dest = X0_REGISTER;

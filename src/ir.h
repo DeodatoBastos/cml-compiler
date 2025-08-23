@@ -1,6 +1,7 @@
 #ifndef IR_H
 #define IR_H
 
+#include "bitset.h"
 #include "symtab.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -70,6 +71,8 @@ typedef struct IR_Node {
 
     char *comment;
     int address;
+
+    BitSet *live_in, *live_out;
 } IRNode;
 
 typedef struct IntermediateRepresentation {

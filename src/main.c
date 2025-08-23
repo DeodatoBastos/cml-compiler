@@ -8,6 +8,7 @@
 #include "cgen.h"
 #include "global.h"
 #include "ir.h"
+#include "reg_allocation.h"
 #include "symtab.h"
 #include "utils.h"
 // #include "scan.h"
@@ -148,9 +149,11 @@ int main(int argc, char **argv) {
     IR *ir = NULL;
     ir = gen_ir(tree);
     print_ir(ir, code);
+    int *color_map = allocate_registers(ir);
 
     fclose(code);
     fclose(source);
+    free(color_map);
     free_ir(ir);
     free_symtab();
     free_ast(tree);
