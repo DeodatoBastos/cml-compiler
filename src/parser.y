@@ -13,7 +13,6 @@
 int yyerror(const char *s);
 static int yylex();
 extern int yylineno;
-extern char* yytext;
 
 static ASTNode *root;
 
@@ -358,11 +357,12 @@ arg_list: arg_list COMMA expr {
 %%
 
 int yyerror(const char *msg) {
-    fprintf(listing, "\033[1;31mError\033[0m at line %d: %s\n", yylineno, msg);
-    fprintf(listing, "\033[1;31mError\033[0m at line %d: %s\n", yylineno, yytext);
-    fprintf(listing, "Current token: ");
-    print_token(yychar, tokenString);
-    Error = true;
+    if (!Error) {
+        fprintf(listing, "\033[1;31mError\033[0m at line %d: %s\n", yylineno, msg);
+        fprintf(listing, "Current token: ");
+        print_token(yychar, tokenString);
+        Error = true;
+    }
     return 0;
 }
 

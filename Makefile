@@ -27,7 +27,7 @@ EXAMPLES := $(wildcard example/*.c example/*.cm)
 all: $(OUTPUT)
 
 $(LEX_C): $(SRC_DIR)/scan.l
-	$(FLEX) -o $@ $<
+	$(FLEX) --yylineno -o $@ $<
 
 $(BISON_C) $(BISON_H): $(SRC_DIR)/parser.y
 	$(BISON) -v -d -o $(BISON_C) $<

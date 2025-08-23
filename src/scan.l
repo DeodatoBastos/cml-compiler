@@ -17,6 +17,7 @@ char tokenString[MAXTOKENLEN+1];
 alpha      [a-zA-Z]
 digit      [0-9]
 identifier [a-zA-Z_][a-zA-Z0-9_]*
+UB         [\200-\277]
 
 %%
 
@@ -61,16 +62,41 @@ identifier [a-zA-Z_][a-zA-Z0-9_]*
 ","                              { return COMMA; }
 "="                              { return ASSIGN; }
 
-"//".*                          { /* skip comment */ }
-"/*"([^*]|\*+[^*/])*"*"+"/"     { /* ignore multi-line comment */}
-[ \t\r]+                        { /* skip whitespace */ }
-\n                              { /* skip new line */ }
+"//".*                           { /* skip comment */ }
+"/*"([^*]|\*+[^*/])*"*"+"/"      { /* ignore multi-line comment */}
+[ \t\r]+                         { /* skip whitespace */ }
+\n                               { /* skip new line */ }
 
-.                               {
+[\300-\337]{UB}                  {
                                     fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
                                     Error = true;
                                     return ERROR;
-                                }
+                                 }
+[\340-\357]{UB}{2}               {
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
+                                    Error = true;
+                                    return ERROR;
+                                 }
+[\360-\367]{UB}{3}               {
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
+                                    Error = true;
+                                    return ERROR;
+                                 }
+[\370-\373]{UB}{4}               {
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
+                                    Error = true;
+                                    return ERROR;
+                                 }
+[\374-\375]{UB}{5}               {
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
+                                    Error = true;
+                                    return ERROR;
+                                 }
+.                                {
+                                    fprintf(stderr, "\033[1;31mLexical Error\033[0m at line %d: Unknown character: '%s'\n", yylineno, yytext);
+                                    Error = true;
+                                    return ERROR;
+                                 }
 
 %%
 
