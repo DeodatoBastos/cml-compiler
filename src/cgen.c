@@ -109,7 +109,7 @@ void gen_code(ASTNode *node, IR *ir) {
             if (node->child[2] != NULL) {
                 IRNode *end_else = new_ir_node(NOP);
                 ir_insert_comment(ir, "goto end-else");
-                IRNode *jump_else = ir_insert_jump_im(ir, 0);
+                IRNode *jump_else = ir_insert_jump(ir, 0);
                 ir_insert_node(ir, end_if);
                 ir_insert_comment(ir, "else-block begin");
                 gen_code(node->child[2], ir);
@@ -118,17 +118,20 @@ void gen_code(ASTNode *node, IR *ir) {
 
                 // goto end_else
                 jump_else->imm = end_else->address - jump_else->address;
+                jump_else->target = end_else;
             } else {
                 ir_insert_node(ir, end_if);
             }
 
             // goto end_if
             cond->imm = end_if->address - cond->address;
+            cond->target = end_if;
             break;
         }
 
         case While: {
             IRNode *start_while = new_ir_node(NOP);
+            IRNode *end_while = new_ir_node(NOP);
 
             ir_insert_comment(ir, "while begin");
             ir_insert_node(ir, start_while);
@@ -139,13 +142,16 @@ void gen_code(ASTNode *node, IR *ir) {
             ir_insert_comment(ir, "while-body end");
 
             ir_insert_comment(ir, "goto while-begin");
-            IRNode *end_while = ir_insert_jump_im(ir, 0);
+            IRNode *jump_start_while = ir_insert_jump(ir, 0);
+            ir_insert_node(ir, end_while);
             ir_insert_comment(ir, "while end");
 
             // goto to the next instrcution after the end_while
-            comp->imm = end_while->address - comp->address + 4;
+            comp->imm = end_while->address - comp->address;
+            comp->target = end_while;
             // goto condition check
-            end_while->imm = start_while->address - end_while->address;
+            jump_start_while->imm = start_while->address - jump_start_while->address;
+            jump_start_while->target = start_while;
             break;
         }
 

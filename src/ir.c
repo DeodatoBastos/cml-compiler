@@ -247,6 +247,7 @@ void free_ir(IR *ir) {
 IRNode *new_ir_node(Instruction instruction) {
     IRNode *node = (IRNode *)malloc(sizeof(IRNode));
     node->next = NULL;
+    node->prev = NULL;
     node->target = NULL;
     node->var_src = NULL;
     node->instruction = instruction;
@@ -260,11 +261,11 @@ IRNode *new_ir_node(Instruction instruction) {
 }
 
 void ir_insert_node(IR *ir, IRNode *node) {
-    if (ir->head == NULL)
+    if (ir->head == NULL) {
         ir->head = node;
-    if (ir->tail == NULL)
         ir->tail = node;
-    else {
+    } else {
+        node->prev = ir->tail;
         ir->tail->next = node;
         ir->tail = node;
     }
@@ -317,16 +318,6 @@ void ir_insert_auipc(IR *ir, int dest, int imm) {
     ir_insert_node(ir, node);
 }
 
-IRNode *ir_insert_auipc_addr(IR *ir, int dest, BucketList *ref) {
-    IRNode *node = new_ir_node(AUIPC);
-    node->dest = dest;
-    node->src_kind = VAR_SRC;
-    node->var_src = ref;
-
-    ir_insert_node(ir, node);
-    return node;
-}
-
 void ir_insert_load(IR *ir, int dest, int imm, int src1) {
     IRNode *node = new_ir_node(LOAD);
     node->dest = dest;
@@ -346,16 +337,6 @@ void ir_insert_load_addr(IR *ir, int dest, BucketList *ref) {
     ir_insert_node(ir, node);
 }
 
-void ir_insert_load_var_addr(IR *ir, int dest, int src1, BucketList *ref) {
-    IRNode *node = new_ir_node(LOAD);
-    node->src_kind = VAR_SRC;
-    node->var_src = ref;
-    node->dest = dest;
-    node->src1 = src1;
-
-    ir_insert_node(ir, node);
-}
-
 void ir_insert_store(IR *ir, int src2, int imm, int src1) {
     IRNode *node = new_ir_node(STORE);
     node->instruction = STORE;
@@ -363,16 +344,6 @@ void ir_insert_store(IR *ir, int src2, int imm, int src1) {
     node->src2 = src2;
     node->src1 = src1;
     node->imm = imm;
-
-    ir_insert_node(ir, node);
-}
-
-void ir_insert_store_var_addr(IR *ir, int src2, int src1, BucketList *ref) {
-    IRNode *node = new_ir_node(STORE);
-    node->src_kind = VAR_SRC;
-    node->var_src = ref;
-    node->src2 = src2;
-    node->src1 = src1;
 
     ir_insert_node(ir, node);
 }
@@ -526,14 +497,6 @@ void ir_insert_label_var(IR *ir, BucketList *ref) {
     ir_insert_node(ir, node);
 }
 
-void ir_insert_jump(IR *ir, BucketList *ref) {
-    IRNode *node = new_ir_node(JUMP);
-    node->src_kind = VAR_SRC;
-    node->var_src = ref;
-
-    ir_insert_node(ir, node);
-}
-
 void ir_insert_rel_jump(IR *ir, IRNode *target) {
     IRNode *node = new_ir_node(RELATIVE_JUMP);
     node->target = target;
@@ -549,7 +512,7 @@ void ir_insert_jump_reg(IR *ir, int src1) {
     ir_insert_node(ir, node);
 }
 
-IRNode *ir_insert_jump_im(IR *ir, int imm) {
+IRNode *ir_insert_jump(IR *ir, int imm) {
     IRNode *node = new_ir_node(JUMP);
     node->src_kind = CONST_SRC;
     node->imm = imm;
@@ -622,14 +585,6 @@ IRNode *ir_insert_bgt(IR *ir, int src1, int src2, int imm) {
 
     ir_insert_node(ir, node);
     return node;
-}
-
-void ir_insert_calli(IR *ir, int imm) {
-    IRNode *node = new_ir_node(CALL);
-    node->src_kind = CONST_SRC;
-    node->imm = imm;
-
-    ir_insert_node(ir, node);
 }
 
 void ir_insert_call(IR *ir, char *label) {

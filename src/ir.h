@@ -57,7 +57,7 @@ typedef enum Instruction {
 } Instruction;
 
 typedef struct IR_Node {
-    struct IR_Node *next;
+    struct IR_Node *next, *prev;
     struct IR_Node *target;
 
     BucketList *var_src;
@@ -97,18 +97,10 @@ void ir_insert_li(IR *ir, int dest, int imm);
 void ir_insert_lui(IR *ir, int dest, int imm);
 // rd <- pc + imm << 12
 void ir_insert_auipc(IR *ir, int dest, int imm);
-// rd <- pc + addr << 12
-IRNode *ir_insert_auipc_addr(IR *ir, int dest, BucketList *ref);
 // `rd <- mem[imm + rs1]`
 void ir_insert_load(IR *ir, int dest, int imm, int src1);
-// `rd <- mem[addr]`
-void ir_insert_load_addr(IR *ir, int dest, BucketList *ref);
-// `rd <- mem[addr + rs1]`
-void ir_insert_load_var_addr(IR *ir, int dest, int src1, BucketList *ref);
 // `mem[imm + rs1] <- rs2`
 void ir_insert_store(IR *ir, int src2, int imm, int src1);
-// `mem[addr + rs1] <- rs2`
-void ir_insert_store_var_addr(IR *ir, int src2, int src1, BucketList *ref);
 
 // rd <- rs1 + imm
 void ir_insert_addi(IR *ir, int dest, int src1, int imm);
@@ -141,21 +133,19 @@ void ir_insert_nop(IR *ir);
 void ir_insert_comment(IR *ir, char *comment);
 
 // label:
-void ir_insert_label_var(IR *ir, BucketList *ref);
 void ir_insert_label(IR *ir, char *label);
+// label:
+void ir_insert_label_var(IR *ir, BucketList *ref);
 
-// ra <- pc + 4
-// pc <- addr
-void ir_insert_jump(IR *ir, BucketList *ref);
-// ra <- pc + 4
+// ra <- pc + 4;
 // pc <- addr
 void ir_insert_rel_jump(IR *ir, IRNode *node);
-// ra <- pc + 4
+// ra <- pc + 4;
 // pc <- rs1
 void ir_insert_jump_reg(IR *ir, int src1);
-// ra <- pc + 4
+// ra <- pc + 4;
 // pc <- pc + imm
-IRNode *ir_insert_jump_im(IR *ir, int imm);
+IRNode *ir_insert_jump(IR *ir, int imm);
 
 // rs1 == rs2 => pc <- pc + imm
 IRNode *ir_insert_beq(IR *ir, int src1, int src2, int imm);
@@ -170,8 +160,6 @@ IRNode *ir_insert_bge(IR *ir, int src1, int src2, int imm);
 // rs1 > rs2 => pc <- pc + imm
 IRNode *ir_insert_bgt(IR *ir, int src1, int src2, int imm);
 
-// call function: call imm
-void ir_insert_calli(IR *ir, int imm);
 // call function: call <func_name>
 void ir_insert_call(IR *ir, char *label);
 // call function: ecall

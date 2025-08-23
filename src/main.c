@@ -16,7 +16,6 @@
 #include "parse.h"
 
 /* allocate global variables */
-int lineno = 0;
 FILE *source;
 FILE *listing;
 FILE *code;
@@ -102,48 +101,53 @@ int main(int argc, char **argv) {
         }
     }
 
+    code = fopen(out_file, "w");
+    if (!code) {
+        fprintf(stderr, "Error opening output file %s.", out_file);
+        perror("Error opening file");
+        fclose(source);
+        return 1;
+    }
+
     listing = stdout;
     fprintf(listing, "C- COMPILATION: %s\n", program);
 
-    ASTNode *syntaxTree = NULL;
-    if (!Error) {
-        syntaxTree = parse();
-        if (TraceParse) {
-            fprintf(listing, "\nSyntax tree:\n");
-            print_tree(syntaxTree, 0);
-        }
+    ASTNode *tree = parse();
+    if (TraceParse) {
+        fprintf(listing, "\nSyntax tree:\n");
+        print_tree(tree, 0);
     }
 
-    if (!Error) {
-        if (TraceAnalyze)
-            fprintf(listing, "\nBuilding Symbol Table...\n");
-        build_symtab(syntaxTree);
-        if (TraceAnalyze)
-            fprintf(listing, "\nChecking Types...\n");
-        type_check(syntaxTree);
-        if (TraceAnalyze)
-            fprintf(listing, "\nType Checking Finished\n");
+    if (Error) {
+        fclose(source);
+        fclose(code);
+        return 1;
+    }
+
+    if (TraceAnalyze)
+        fprintf(listing, "\nBuilding Symbol Table...\n");
+    build_symtab(tree);
+    if (TraceAnalyze)
+        fprintf(listing, "\nChecking Types...\n");
+    type_check(tree);
+    if (TraceAnalyze)
+        fprintf(listing, "\nType Checking Finished\n");
+
+    if (Error) {
+        free_symtab();
+        fclose(source);
+        fclose(code);
+        return 1;
     }
 
     IR *ir = NULL;
-    if (!Error) {
-        code = fopen(out_file, "w");
-        if (!code) {
-            fprintf(stderr, "Error opening output file %s.", out_file);
-            perror("Error opening file");
-            fclose(source);
-            return 1;
-        }
+    ir = gen_ir(tree);
+    print_ir(ir, code);
 
-        ir = gen_ir(syntaxTree);
-        print_ir(ir, code);
-    }
-
-    if (code != NULL)
-        fclose(code);
+    fclose(code);
     fclose(source);
     free_ir(ir);
     free_symtab();
-    free_ast(syntaxTree);
+    free_ast(tree);
     return 0;
 }
