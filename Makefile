@@ -1,21 +1,7 @@
-# Compiler and tools
-FLEX=flex
-BISON=bison
-CC=gcc
-
-# Files
-LEX_SRC=src/scan.l
-BISON_SRC=src/parser.y
-MAIN_SRC=src/main.c
-UTILS_SRC=src/utils.c src/stack.c src/queue.c
-ANALYSIS_SRC=src/symtab.c src/analyze.c
-CODE_SRC=src/ir.c src/cgen.c
-LEX_C=src/lex.yy.c
-BISON_C=src/parser.tab.c
-BISON_H=src/parser.tab.h
-OUTPUT=cml.out
-
-EXAMPLES := $(wildcard example/*.c example/*.cm)
+CC = gcc
+FLEX = flex
+BISON = bison
+OUTPUT = cml.out
 
 # Optional flags passed via ARGS
 ARGS ?=
@@ -27,19 +13,27 @@ LDFLAGS = -lm -lfl
 # CXXFLAGS = -Werror -Wdouble-promotion -g3 -Wfloat-equal -fsanitize=leak,address -fsanitize-trap=undefined
 EXTRAFLAGS= -D_GNU_SOURCE -D_POSIX_C_SOURCE=200809L
 
+SRC_DIR := src
+LEX_C   := $(SRC_DIR)/lex.yy.c
+BISON_C := $(SRC_DIR)/parser.tab.c
+BISON_H := $(SRC_DIR)/parser.tab.h
+BISON_O := $(SRC_DIR)/parser.output
+ALL_C := $(shell find $(SRC_DIR) -type f -name '*.c')
+SRC   := $(filter-out $(LEX_C) $(BISON_C),$(ALL_C))
+HEADERS := $(wildcard src/*.h)
+EXAMPLES := $(wildcard example/*.c example/*.cm)
+
 # Default rule
 all: $(OUTPUT)
 
-# Flex and Bison rules
-$(LEX_C): $(LEX_SRC)
-	$(LEX) -o $@ $<
+$(LEX_C): $(SRC_DIR)/scan.l
+	$(FLEX) -o $@ $<
 
-$(BISON_C) $(BISON_H): $(BISON_SRC)
-	$(BISON) -v -d -o $(BISON_C) $(BISON_SRC)
+$(BISON_C) $(BISON_H): $(SRC_DIR)/parser.y
+	$(BISON) -v -d -o $(BISON_C) $<
 
-# Compile the frontend
-$(OUTPUT): $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(BISON_H)
-	$(CC) -o $@ $(MAIN_SRC) $(UTILS_SRC) $(CODE_SRC) $(ANALYSIS_SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
+$(OUTPUT): $(SRC) $(HEADERS) $(LEX_C) $(BISON_H) $(BISON_C)
+	$(CC) -o $@ $(SRC) $(LEX_C) $(BISON_C) $(CXXFLAGS) $(CXXFLAGS_WNO) $(LDFLAGS) $(EXTRAFLAGS)
 
 # Run the program with a single file from the "example" directory
 example-file: $(OUTPUT)
@@ -90,8 +84,8 @@ debug: $(OUTPUT)
 	mkdir -p asm; \
 	basefile=$$(basename $$selected); \
 	outflag="-o asm/$${basefile%.*}.asm"; \
-	echo "=== Debugging with Valgrind: valgrind ./$(OUTPUT) $$outflag $$selected ==="; \
-	valgrind ./$(OUTPUT) $$outflag "$$selected"
+	echo "=== Debugging with Valgrind: valgrind --leak-check=full --track-origins=yes ./$(OUTPUT) $$outflag $$selected ==="; \
+	valgrind --leak-check=full --track-origins=yes ./$(OUTPUT) $$outflag "$$selected"
 
 # Run the program on all files in the "example" directory, optionally saving output
 example: $(OUTPUT)
@@ -120,7 +114,7 @@ example: $(OUTPUT)
 
 # Clean build files
 clean:
-	rm -f $(OUTPUT) src/lex.yy.c src/parser.tab.c src/parser.tab.h src/parser.output
+	rm -f $(OUTPUT) $(LEX_C) $(BISON_C) $(BISON_H) $(BISON_O) $(OUTPUT)
 	rm -rf asm results
 
 .PHONY: all run-file run-dir clean example
