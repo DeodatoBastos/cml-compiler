@@ -1,12 +1,13 @@
 #ifndef BITSET_H
 #define BITSET_H
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 typedef uint64_t word_t;
-#define BITS_PER_WORD (sizeof(word_t) * 8)
+#define BITS_PER_WORD (sizeof(word_t) * CHAR_BIT)
 
 typedef struct BitSet {
     word_t *words;

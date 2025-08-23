@@ -16,7 +16,6 @@ typedef struct AdjListNode {
 typedef struct InterferenceGraph {
     int num_nodes;
     int *num_neighbors;
-    bool **adj_matrix;
     AdjListNode **adj_list;
 } InterferenceGraph;
 
@@ -73,16 +72,11 @@ static InterferenceGraph *create_graph(int n_nodes) {
     InterferenceGraph *g = (InterferenceGraph *)malloc(sizeof(InterferenceGraph));
     g->num_nodes = n_nodes;
     g->num_neighbors = (int *)malloc(n_nodes * sizeof(int));
-    g->adj_matrix = (bool **)malloc(n_nodes * sizeof(bool *));
     g->adj_list = (AdjListNode **)malloc(n_nodes * sizeof(AdjListNode *));
 
     for (int n = 0; n < n_nodes; n++) {
         g->num_neighbors[n] = 0;
-        g->adj_matrix[n] = (bool *)calloc(n_nodes, sizeof(bool));
         g->adj_list[n] = NULL;
-        // g->adj_list[n] = (AdjListNode *)malloc(n_nodes * sizeof(AdjListNode));
-        // g->adj_list[n]->next = NULL;
-        // g->adj_list[n]->value = -1;
     }
 
     return g;
@@ -99,7 +93,7 @@ static void print_graph(InterferenceGraph *g) {
 }
 
 static void add_edge(InterferenceGraph *g, int u, int v) {
-    if (u == v || g->adj_matrix[u][v])
+    if (u == v)
         return;
 
     AdjListNode *new_u = (AdjListNode *)malloc(sizeof(AdjListNode));
@@ -107,14 +101,12 @@ static void add_edge(InterferenceGraph *g, int u, int v) {
     new_u->next = g->adj_list[u];
     g->adj_list[u] = new_u;
     g->num_neighbors[u] += 1;
-    g->adj_matrix[u][v] = true;
 
     AdjListNode *new_v = (AdjListNode *)malloc(sizeof(AdjListNode));
     new_v->value = u;
     new_v->next = g->adj_list[v];
     g->adj_list[v] = new_v;
     g->num_neighbors[v] += 1;
-    g->adj_matrix[v][u] = true;
 }
 
 static void destroy_graph(InterferenceGraph *g) {
@@ -127,9 +119,7 @@ static void destroy_graph(InterferenceGraph *g) {
             free(node);
             node = next;
         }
-        free(g->adj_matrix[u]);
     }
-    free(g->adj_matrix);
     free(g->adj_list);
     free(g);
 }
@@ -161,13 +151,25 @@ static int *color_graph(InterferenceGraph *g, int num_temps, int num_colors) {
     Stack *stack = s_create();
     int num_nodes = num_temps;
     while (num_nodes > 0) {
-        int max_neighbors_under_k = 0, sel_node = -1;
+        int max_neighbors = -1, sel_node = -1;
         for (int i = 0; i < num_temps; i++) {
-            if (active[i] && (sel_node == -1 || g->num_neighbors[i] > max_neighbors_under_k)) {
-                max_neighbors_under_k = g->num_neighbors[i];
+            if (active[i] &&
+                ((g->num_neighbors[i] > max_neighbors && g->num_neighbors[i] < num_colors))) {
+                max_neighbors = g->num_neighbors[i];
                 sel_node = i;
             }
         }
+
+        // need to spill (pick the node with most neighbors)
+        if (sel_node == -1) {
+            for (int i = 0; i < num_temps; i++) {
+                if (active[i] && g->num_neighbors[i] > max_neighbors) {
+                    max_neighbors = g->num_neighbors[i];
+                    sel_node = i;
+                }
+            }
+        }
+
         s_push(stack, sel_node);
         active[sel_node] = false;
 
@@ -187,27 +189,33 @@ static int *color_graph(InterferenceGraph *g, int num_temps, int num_colors) {
         //   if color is available: Mark color
         //   activate this node
         bool found = false;
+        int v = s_top(stack);
         for (int color = 0; color < num_colors; color++) {
-            bool color_available = true;
+            bool available = true;
 
-            for (AdjListNode *node = g->adj_list[s_top(stack)]; node != NULL; node = node->next) {
-                color_available =
-                    color_available && !(active[node->value] && map[node->value] == color);
+            for (AdjListNode *u = g->adj_list[v]; u != NULL; u = u->next) {
+                available = available && !(active[u->value] && map[u->value] == color);
+
+                if (!available)
+                    break;
             }
 
-            if (color_available) {
-                map[s_top(stack)] = color;
+            if (available) {
+                map[v] = color;
                 found = true;
                 break;
             }
         }
 
         if (!found) {
-            fprintf(listing, "Fatal: %d registers are not enough, must spill\n", num_colors);
+            fprintf(listing,
+                    "\033[1;31mFatal Error\033[0m: %d registers are not enough, must spill\n",
+                    num_colors);
+            Error = true;
             break;
         }
 
-        active[s_top(stack)] = 1;
+        active[v] = true;
         s_pop(stack);
     }
 
