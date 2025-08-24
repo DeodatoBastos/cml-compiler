@@ -20,10 +20,6 @@
 typedef enum SourceKind { CONST_SRC, REG_SRC, VAR_SRC } SourceKind;
 
 typedef enum Instruction {
-    NOP,
-    COMMENT,
-    PREPARE_STACK,
-
     MOV,
     LI,
     LUI,
@@ -39,8 +35,12 @@ typedef enum Instruction {
     SLL,
     SRA,
     SRL,
+    NOP,
+
+    COMMENT,
 
     LABEL,
+
     JUMP,
     JUMP_REG,
     RELATIVE_JUMP,
@@ -50,7 +50,6 @@ typedef enum Instruction {
     BLE,
     BLT,
     BGE,
-    BGQ,
     BGT,
 
     CALL,
@@ -90,7 +89,6 @@ void free_ir(IR *ir);
 
 IRNode *new_ir_node(Instruction instruction);
 void ir_insert_node(IR *ir, IRNode *node);
-void ir_insert_prepare_stack(IR *ir);
 
 // rd <- rs1
 void ir_insert_mov(IR *ir, int dest, int src1);
@@ -137,18 +135,16 @@ void ir_insert_comment(IR *ir, char *comment);
 
 // label:
 void ir_insert_label(IR *ir, char *label);
-// label:
-void ir_insert_label_var(IR *ir, BucketList *ref);
 
 // ra <- pc + 4;
-// pc <- addr
-void ir_insert_rel_jump(IR *ir, IRNode *node);
+// pc <- pc + imm
+IRNode *ir_insert_jump(IR *ir, int imm);
 // ra <- pc + 4;
 // pc <- rs1
 void ir_insert_jump_reg(IR *ir, int src1);
 // ra <- pc + 4;
-// pc <- pc + imm
-IRNode *ir_insert_jump(IR *ir, int imm);
+// pc <- addr
+void ir_insert_rel_jump(IR *ir, IRNode *target);
 
 // rs1 == rs2 => pc <- pc + imm
 IRNode *ir_insert_beq(IR *ir, int src1, int src2, int imm);

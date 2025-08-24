@@ -8,10 +8,6 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-/* Function new_ast creates a new Abstract Syntax Tree
- */
-AST *new_ast();
-
 /* Function new_stmt_node creates a new statement
  * node for syntax tree construction
  */

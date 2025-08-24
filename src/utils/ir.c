@@ -19,13 +19,6 @@ int register_new_temp(IR *ir) {
 
 const char *instruction_to_string(Instruction instr) {
     switch (instr) {
-    case NOP:
-        return "NOP";
-    case COMMENT:
-        return "COMMENT";
-    case PREPARE_STACK:
-        return "PREPARE_STACK";
-
     case MOV:
         return "MOV";
     case LI:
@@ -55,9 +48,15 @@ const char *instruction_to_string(Instruction instr) {
         return "SRA";
     case SRL:
         return "SRL";
+    case NOP:
+        return "NOP";
+
+    case COMMENT:
+        return "COMMENT";
 
     case LABEL:
         return "LABEL";
+
     case JUMP:
         return "JUMP";
     case JUMP_REG:
@@ -75,8 +74,6 @@ const char *instruction_to_string(Instruction instr) {
         return "BLT";
     case BGE:
         return "BGE";
-    case BGQ:
-        return "BGQ";
     case BGT:
         return "BGT";
 
@@ -127,10 +124,7 @@ void print_ir(IR *ir, FILE *out) {
             // continue;
             fprintf(out, "# %s\n", node->comment);
         } else if (instr == LABEL) {
-            if (node->src_kind == VAR_SRC)
-                fprintf(out, "%s:\n", node->var_src->node->attr.name);
-            else
-                fprintf(out, "%s:\n", node->comment);
+            fprintf(out, "%s:\n", node->comment);
         } else {
             fprintf(out, "%s ", instruction_to_string(instr));
             switch (instr) {
@@ -153,11 +147,7 @@ void print_ir(IR *ir, FILE *out) {
                     print_register(out, node->dest);
                 else
                     print_register(out, node->src2);
-                fprintf(out, ", ");
-                if (node->src_kind == VAR_SRC)
-                    fprintf(out, "%s(", node->var_src->node->attr.name);
-                else
-                    fprintf(out, "%d(", node->imm);
+                fprintf(out, ", %d(", node->imm);
                 print_register(out, node->src1);
                 fprintf(out, ")");
                 break;
@@ -185,7 +175,6 @@ void print_ir(IR *ir, FILE *out) {
             case BLT:
             case BLE:
             case BGE:
-            case BGQ:
             case BGT:
                 print_register(out, node->src1);
                 fprintf(out, ", ");
@@ -195,10 +184,7 @@ void print_ir(IR *ir, FILE *out) {
                 break;
 
             case JUMP:
-                if (node->src_kind == CONST_SRC)
-                    fprintf(out, "%d", node->imm);
-                else if (node->src_kind == VAR_SRC)
-                    fprintf(out, "%s", node->var_src->node->attr.name);
+                fprintf(out, "%d", node->imm);
                 break;
 
             case JUMP_REG:
@@ -210,15 +196,10 @@ void print_ir(IR *ir, FILE *out) {
                 break;
 
             case CALL:
-                fprintf(out, " ");
-                if (node->src_kind == CONST_SRC)
-                    fprintf(out, "%d", node->imm);
-                else if (node->src_kind == VAR_SRC)
-                    fprintf(out, "%s", node->comment);
+                fprintf(out, " %s", node->comment);
                 break;
 
             case ECALL:
-            case PREPARE_STACK:
             case NOP:
             default:
                 // No operands
@@ -280,13 +261,6 @@ void ir_insert_node(IR *ir, IRNode *node) {
     }
 }
 
-void ir_insert_prepare_stack(IR *ir) {
-    IRNode *node = new_ir_node(PREPARE_STACK);
-    node->src_kind = CONST_SRC;
-
-    ir_insert_node(ir, node);
-}
-
 void ir_insert_mov(IR *ir, int dest, int src1) {
     IRNode *node = new_ir_node(MOV);
     node->src_kind = REG_SRC;
@@ -329,15 +303,6 @@ void ir_insert_load(IR *ir, int dest, int imm, int src1) {
     node->src_kind = REG_SRC;
     node->src1 = src1;
     node->imm = imm;
-
-    ir_insert_node(ir, node);
-}
-
-void ir_insert_load_addr(IR *ir, int dest, BucketList *ref) {
-    IRNode *node = new_ir_node(LOAD);
-    node->dest = dest;
-    node->src_kind = VAR_SRC;
-    node->var_src = ref;
 
     ir_insert_node(ir, node);
 }
@@ -502,11 +467,13 @@ void ir_insert_label_var(IR *ir, BucketList *ref) {
     ir_insert_node(ir, node);
 }
 
-void ir_insert_rel_jump(IR *ir, IRNode *target) {
-    IRNode *node = new_ir_node(RELATIVE_JUMP);
-    node->target = target;
+IRNode *ir_insert_jump(IR *ir, int imm) {
+    IRNode *node = new_ir_node(JUMP);
+    node->src_kind = CONST_SRC;
+    node->imm = imm;
 
     ir_insert_node(ir, node);
+    return node;
 }
 
 void ir_insert_jump_reg(IR *ir, int src1) {
@@ -517,13 +484,11 @@ void ir_insert_jump_reg(IR *ir, int src1) {
     ir_insert_node(ir, node);
 }
 
-IRNode *ir_insert_jump(IR *ir, int imm) {
-    IRNode *node = new_ir_node(JUMP);
-    node->src_kind = CONST_SRC;
-    node->imm = imm;
+void ir_insert_rel_jump(IR *ir, IRNode *target) {
+    IRNode *node = new_ir_node(RELATIVE_JUMP);
+    node->target = target;
 
     ir_insert_node(ir, node);
-    return node;
 }
 
 IRNode *ir_insert_beq(IR *ir, int src1, int src2, int imm) {

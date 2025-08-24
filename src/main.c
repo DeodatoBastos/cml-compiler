@@ -10,6 +10,7 @@
 #include "frontend/analyze.h"
 #include "frontend/parse.h"
 #include "utils/ir.h"
+#include "utils/object_code.h"
 #include "utils/symtab.h"
 #include "utils/utils.h"
 
@@ -147,12 +148,15 @@ int main(int argc, char **argv) {
 
     IR *ir = NULL;
     ir = gen_ir(tree);
-    print_ir(ir, code);
+    // print_ir(ir, code);
     int *color_map = allocate_registers(ir);
+    ObjectCode *obj = ir_to_obj_code(ir, color_map, true);
+    write_asm(obj, code);
 
     fclose(code);
     fclose(source);
     free(color_map);
+    free_obj_code(obj);
     free_ir(ir);
     free_symtab();
     free_ast(tree);

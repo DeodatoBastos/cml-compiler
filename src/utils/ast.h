@@ -6,7 +6,7 @@
 typedef int TokenType;
 
 typedef enum { Stmt, Expr } NodeKind;
-typedef enum { Root, Compound, If, While, Return, Read, Write, Assign } StmtKind;
+typedef enum { Compound, If, While, Return, Read, Write, Assign } StmtKind;
 typedef enum {
     Op,
     Const,
@@ -42,9 +42,5 @@ typedef struct ASTNode {
     struct ASTNode *child[MAXCHILDREN];
     struct ASTNode *sibling;
 } ASTNode;
-
-typedef struct AST {
-    ASTNode *root;
-} AST;
 
 #endif

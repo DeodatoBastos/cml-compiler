@@ -19,7 +19,6 @@ static IRNode *func_end = NULL;
 IR *gen_ir(ASTNode *tree) {
     IR *ir = new_ir();
 
-    ir_insert_prepare_stack(ir);
     ir_insert_comment(ir, "program entry: call main");
     ir_insert_call(ir, "main");
     ir_insert_comment(ir, "syscall Exit (a7 = 10)");
@@ -221,9 +220,6 @@ void gen_code(ASTNode *node, IR *ir) {
             ir_insert_ecall(ir);
             break;
         }
-
-        case Root:
-            break;
         }
         break;
 
