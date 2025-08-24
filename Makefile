@@ -86,6 +86,7 @@ debug: $(OUTPUT)
 	outflag="-o asm/$${basefile%.*}.asm"; \
 	echo "=== Debugging with Valgrind: valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(OUTPUT) $$outflag $$selected ==="; \
 	valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./$(OUTPUT) $$outflag "$$selected"
+	# valgrind --leak-check=full --track-origins=yes ./$(OUTPUT) $$outflag "$$selected"
 
 # Run the program on all files in the "example" directory, optionally saving output
 example: $(OUTPUT)
