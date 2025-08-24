@@ -28,7 +28,12 @@ static void liveness_analysis(IR *ir) {
             if (node->instruction == COMMENT)
                 continue;
 
+            // printf("Node: %d\n", (node->address >> 2) + 0);
+
             IRNode *succ = node->next;
+            while (succ != NULL && succ->instruction == COMMENT) {
+                succ = succ->next;
+            }
             // Successor of Jump is the target
             if (node->instruction == JUMP || node->instruction == RELATIVE_JUMP) {
                 succ = node->target;
@@ -46,13 +51,26 @@ static void liveness_analysis(IR *ir) {
             }
 
             // `in[v]` <-  use(v) U (`out[v]` - def(v))
-            BitSet *new_in = new_out == NULL ? new_bitset(num_temps) : bitset_copy(new_out);
-            if (node->dest > 0)
+            BitSet *new_in = new_out != NULL ? bitset_copy(new_out)
+                             : ((node->dest > 0) | (node->src1 > 0) | (node->src2 > 0))
+                                 ? new_bitset(num_temps)
+                                 : NULL;
+            if ((node->dest > 0) && (new_out != NULL) && (bitset_test(new_out, node->dest)))
                 bitset_clear(new_in, node->dest);
             if (node->src1 > 0)
                 bitset_set(new_in, node->src1);
             if (node->src2 > 0)
                 bitset_set(new_in, node->src2);
+
+            // printf("New in:  ");
+            // print_bitset(new_in);
+            // printf("Old in:  ");
+            // print_bitset(node->live_in);
+            // printf("New out: ");
+            // print_bitset(new_out);
+            // printf("Old out: ");
+            // print_bitset(node->live_out);
+            // printf("\n");
 
             if (!bitset_equals(node->live_out, new_out) || !bitset_equals(node->live_in, new_in)) {
                 changed = true;

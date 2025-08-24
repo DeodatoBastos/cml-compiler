@@ -79,11 +79,15 @@ typedef struct IntermediateRepresentation {
     struct IR_Node *tail;
 
     int next_temp_reg;
+    int next_while;
+    int next_if;
     int last_address;
 } IR;
 
 IR *new_ir();
 int register_new_temp(IR *ir);
+int register_new_while(IR *ir);
+int register_new_if(IR *ir);
 void print_ir(IR *ir, FILE *out);
 void free_ir(IR *ir);
 
@@ -134,11 +138,11 @@ void ir_insert_nop(IR *ir);
 void ir_insert_comment(IR *ir, char *comment);
 
 // label:
-void ir_insert_label(IR *ir, char *label);
+IRNode *ir_insert_label(IR *ir, char *label);
 
 // ra <- pc + 4;
-// pc <- pc + imm
-IRNode *ir_insert_jump(IR *ir, int imm);
+// pc <- pc + imm (imm == label)
+IRNode *ir_insert_jump(IR *ir, char *label);
 // ra <- pc + 4;
 // pc <- rs1
 void ir_insert_jump_reg(IR *ir, int src1);
@@ -146,20 +150,20 @@ void ir_insert_jump_reg(IR *ir, int src1);
 // pc <- addr
 void ir_insert_rel_jump(IR *ir, IRNode *target);
 
-// rs1 == rs2 => pc <- pc + imm
+// rs1 == rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_beq(IR *ir, int src1, int src2, int imm);
-// rs1 != rs2 => pc <- pc + imm
+// rs1 != rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_bne(IR *ir, int src1, int src2, int imm);
-// rs1 <= rs2 => pc <- pc + imm
+// rs1 <= rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_ble(IR *ir, int src1, int src2, int imm);
-// rs1 < rs2 => pc <- pc + imm
+// rs1 < rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_blt(IR *ir, int src1, int src2, int imm);
-// rs1 >= rs2 => pc <- pc + imm
+// rs1 >= rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_bge(IR *ir, int src1, int src2, int imm);
-// rs1 > rs2 => pc <- pc + imm
+// rs1 > rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_bgt(IR *ir, int src1, int src2, int imm);
 
-// call function: call <func_name>
+// call function: call label
 void ir_insert_call(IR *ir, char *label);
 // call function: ecall
 void ir_insert_ecall(IR *ir);

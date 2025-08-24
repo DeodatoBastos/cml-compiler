@@ -2,18 +2,31 @@
 #include "bitset.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 IR *new_ir() {
     IR *ir = (IR *)malloc(sizeof(IR));
     ir->head = NULL;
     ir->tail = NULL;
     ir->next_temp_reg = 1;
+    ir->next_while = 0;
+    ir->next_if = 0;
     ir->last_address = 0;
     return ir;
 }
 
 int register_new_temp(IR *ir) {
     int id = ir->next_temp_reg++;
+    return id;
+}
+
+int register_new_while(IR *ir) {
+    int id = ir->next_while++;
+    return id;
+}
+
+int register_new_if(IR *ir) {
+    int id = ir->next_if++;
     return id;
 }
 
@@ -180,11 +193,13 @@ void print_ir(IR *ir, FILE *out) {
                 fprintf(out, ", ");
                 print_register(out, node->src2);
                 fprintf(out, ", ");
-                fprintf(out, "%d", node->imm);
+                // fprintf(out, "%d", node->imm);
+                fprintf(out, "%s", node->comment);
                 break;
 
             case JUMP:
-                fprintf(out, "%d", node->imm);
+                // fprintf(out, "%d", node->imm);
+                fprintf(out, "%s", node->comment);
                 break;
 
             case JUMP_REG:
@@ -219,6 +234,8 @@ void free_ir(IR *ir) {
     IRNode *next = NULL;
     while (node != NULL) {
         next = node->next;
+        if (node->comment != NULL)
+            free(node->comment);
         destroy_biset(node->live_in);
         destroy_biset(node->live_out);
         free(node);
@@ -243,6 +260,7 @@ IRNode *new_ir_node(Instruction instruction) {
     node->src2 = X0_REGISTER;
     node->imm = 0;
     node->address = -1;
+    node->comment = NULL;
     return node;
 }
 
@@ -446,31 +464,24 @@ void ir_insert_nop(IR *ir) {
 
 void ir_insert_comment(IR *ir, char *comment) {
     IRNode *node = new_ir_node(COMMENT);
-    node->comment = comment;
+    node->comment = strdup(comment);
 
     ir_insert_node(ir, node);
 }
 
-void ir_insert_label(IR *ir, char *ref) {
+IRNode *ir_insert_label(IR *ir, char *label) {
     IRNode *node = new_ir_node(LABEL);
     node->src_kind = CONST_SRC;
-    node->comment = ref;
+    node->comment = strdup(label);
 
     ir_insert_node(ir, node);
+    return node;
 }
 
-void ir_insert_label_var(IR *ir, BucketList *ref) {
-    IRNode *node = new_ir_node(LABEL);
-    node->src_kind = VAR_SRC;
-    node->var_src = ref;
-
-    ir_insert_node(ir, node);
-}
-
-IRNode *ir_insert_jump(IR *ir, int imm) {
+IRNode *ir_insert_jump(IR *ir, char* label) {
     IRNode *node = new_ir_node(JUMP);
     node->src_kind = CONST_SRC;
-    node->imm = imm;
+    node->comment = strdup(label);
 
     ir_insert_node(ir, node);
     return node;
@@ -560,7 +571,7 @@ IRNode *ir_insert_bgt(IR *ir, int src1, int src2, int imm) {
 void ir_insert_call(IR *ir, char *label) {
     IRNode *node = new_ir_node(CALL);
     node->src_kind = VAR_SRC;
-    node->comment = label;
+    node->comment = strdup(label);
 
     ir_insert_node(ir, node);
 }

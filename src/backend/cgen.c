@@ -3,7 +3,8 @@
 #include "../utils/ast.h"
 #include "../utils/ir.h"
 #include "../utils/symtab.h"
-#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 // Forward declarations for static helper functions
 static void gen_code(ASTNode *node, IR *ir);
@@ -14,7 +15,8 @@ static IRNode *gen_condition(ASTNode *node, IR *ir);
  * @brief A global pointer to the end label of the current function being generated.
  * This is used by 'return' statements to know where the function's epilogue is.
  */
-static IRNode *func_end = NULL;
+static ASTNode* func;
+// static IRNode *func_end = NULL;
 
 IR *gen_ir(ASTNode *tree) {
     IR *ir = new_ir();
@@ -97,7 +99,10 @@ void gen_code(ASTNode *node, IR *ir) {
         }
 
         case If: {
-            IRNode *end_if = new_ir_node(NOP);
+            int n_if = register_new_if(ir);
+            IRNode *end_if = NULL;
+            char end_if_label[50];
+            snprintf(end_if_label, sizeof(end_if_label), "end_if_%d", n_if);
             IRNode *cond = gen_condition(node->child[0], ir);
 
             ir_insert_comment(ir, "then-block begin");
@@ -106,34 +111,41 @@ void gen_code(ASTNode *node, IR *ir) {
 
             // uncoditionally jump to the end
             if (node->child[2] != NULL) {
-                IRNode *end_else = new_ir_node(NOP);
+                char end_else_label[50];
+                snprintf(end_else_label, sizeof(end_else_label), "end_else_%d", n_if);
+
                 ir_insert_comment(ir, "goto end-else");
-                IRNode *jump_else = ir_insert_jump(ir, 0);
-                ir_insert_node(ir, end_if);
+                IRNode *jump_else = ir_insert_jump(ir, end_else_label);
+                end_if = ir_insert_label(ir, end_if_label);
                 ir_insert_comment(ir, "else-block begin");
                 gen_code(node->child[2], ir);
                 ir_insert_comment(ir, "else-block end");
-                ir_insert_node(ir, end_else);
+                IRNode *end_else = ir_insert_label(ir, end_else_label);
 
                 // goto end_else
-                jump_else->imm = end_else->address - jump_else->address;
+                // jump_else->imm = end_else->address - jump_else->address;
+                // jump_else->comment = end_else->comment;
                 jump_else->target = end_else;
             } else {
-                ir_insert_node(ir, end_if);
+                end_if = ir_insert_label(ir, end_if_label);
             }
 
             // goto end_if
-            cond->imm = end_if->address - cond->address;
+            // cond->imm = end_if->address - cond->address;
             cond->target = end_if;
+            cond->comment = strdup(end_if->comment);
             break;
         }
 
         case While: {
-            IRNode *start_while = new_ir_node(NOP);
-            IRNode *end_while = new_ir_node(NOP);
+            int n_while = register_new_while(ir);
+            IRNode *start_while = NULL, *end_while = NULL;
+            char start_label[50], end_label[50];
+            snprintf(start_label, sizeof(start_label), "start_while_%d", n_while);
+            snprintf(end_label, sizeof(end_label), "end_while_%d", n_while);
 
             ir_insert_comment(ir, "while begin");
-            ir_insert_node(ir, start_while);
+            start_while = ir_insert_label(ir, start_label);
             IRNode *comp = gen_condition(node->child[0], ir);
 
             ir_insert_comment(ir, "while-body begin");
@@ -141,15 +153,17 @@ void gen_code(ASTNode *node, IR *ir) {
             ir_insert_comment(ir, "while-body end");
 
             ir_insert_comment(ir, "goto while-begin");
-            IRNode *jump_start_while = ir_insert_jump(ir, 0);
-            ir_insert_node(ir, end_while);
+            IRNode *jump_start_while = ir_insert_jump(ir, start_label);
+            end_while = ir_insert_label(ir, end_label);
             ir_insert_comment(ir, "while end");
 
             // goto to the next instrcution after the end_while
-            comp->imm = end_while->address - comp->address;
+            // comp->imm = end_while->address - comp->address;
             comp->target = end_while;
+            comp->comment = strdup(end_while->comment);
             // goto condition check
-            jump_start_while->imm = start_while->address - jump_start_while->address;
+            // jump_start_while->imm = start_while->address - jump_start_while->address;
+            // jump_start_while->comment = jump_start_while->comment;
             jump_start_while->target = start_while;
             break;
         }
@@ -161,7 +175,10 @@ void gen_code(ASTNode *node, IR *ir) {
                 ir_insert_mov(ir, A0_REGISTER, node->child[0]->temp_reg);
             }
             ir_insert_comment(ir, "jump to function epilogue");
-            ir_insert_rel_jump(ir, func_end);
+            // ir_insert_rel_jump(ir, func_end);
+            char label[256];
+            snprintf(label, sizeof(label), "end_%s", func->attr.name);
+            ir_insert_jump(ir, label);
             break;
         }
 
@@ -217,6 +234,9 @@ void gen_code(ASTNode *node, IR *ir) {
             ir_insert_comment(ir, "syscall PrintInt (a7 = 1, a0 = rs1)");
             ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 1);
             ir_insert_mov(ir, A0_REGISTER, node->child[0]->temp_reg);
+            ir_insert_ecall(ir);
+            ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 11);
+            ir_insert_li(ir, A0_REGISTER, 10);
             ir_insert_ecall(ir);
             break;
         }
@@ -310,7 +330,6 @@ void gen_code(ASTNode *node, IR *ir) {
         }
 
         case FuncDecl: {
-
             ir_insert_comment(ir, "func begin");
             ir_insert_label(ir, node->attr.name);
 
@@ -328,15 +347,19 @@ void gen_code(ASTNode *node, IR *ir) {
             }
 
             // Func Body
-            IRNode *old_func_end = func_end;
-            func_end = new_ir_node(NOP);
-
+            // IRNode *old_func_end = func_end;
+            // func_end = new_ir_node(NOP);
+            ASTNode *old_func = func;
+            func = node;
             ir_insert_comment(ir, "func body");
             gen_code(node->child[1], ir);
 
             // Func Epilogue
             ir_insert_comment(ir, "func epilogue");
-            ir_insert_node(ir, func_end);
+            char label[256];
+            snprintf(label, sizeof(label), "end_%s", node->attr.name);
+            ir_insert_label(ir, label);
+            // ir_insert_node(ir, func_end);
 
             // restore registers
             ir_insert_mov(ir, SP_REGISTER, FP_REGISTER);
@@ -347,7 +370,8 @@ void gen_code(ASTNode *node, IR *ir) {
             // return to caller
             ir_insert_jump_reg(ir, RA_REGISTER);
 
-            func_end = old_func_end;
+            // func_end = old_func_end;
+            func = old_func;
             break;
         }
 

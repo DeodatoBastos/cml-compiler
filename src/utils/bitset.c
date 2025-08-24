@@ -1,6 +1,7 @@
 #include "bitset.h"
 #include "utils.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -48,7 +49,7 @@ void bitset_toggle(BitSet *bs, int pos) {
     bs->words[word_idx] ^= (1UL << bit_idx);
 }
 
-bool bitset_test(BitSet *bs, int pos) {
+bool bitset_test(const BitSet *bs, int pos) {
     if (bs == NULL)
         return false;
 
@@ -60,7 +61,7 @@ bool bitset_test(BitSet *bs, int pos) {
     return (bs->words[word_idx] & (1UL << bit_idx)) != 0;
 }
 
-void bitset_union(BitSet *dest, BitSet *src) {
+void bitset_union(BitSet *dest, const BitSet *src) {
     if (src == NULL)
         return;
 
@@ -70,7 +71,7 @@ void bitset_union(BitSet *dest, BitSet *src) {
     }
 }
 
-void bitset_diff(BitSet *dest, BitSet *src) {
+void bitset_diff(BitSet *dest, const BitSet *src) {
     if (dest == NULL || src == NULL)
         return;
 
@@ -80,7 +81,7 @@ void bitset_diff(BitSet *dest, BitSet *src) {
     }
 }
 
-bool bitset_equals(BitSet *bs1, BitSet *bs2) {
+bool bitset_equals(const BitSet *bs1, const BitSet *bs2) {
     if (bs1 == NULL && bs2 == NULL)
         return true;
 
@@ -88,6 +89,21 @@ bool bitset_equals(BitSet *bs1, BitSet *bs2) {
         return false;
 
     return memcmp(bs1->words, bs2->words, bs1->n_words * sizeof(word_t)) == 0;
+}
+
+void print_bitset(const BitSet *bs) {
+    if (bs == NULL) {
+        printf("\xe2\x88\x85\n");
+        return;
+    }
+
+    for (int i = 0; i < bs->size; i++) {
+        printf("%d", bitset_test(bs, i) ? 1 : 0);
+        if ((i + 1) % 8 == 0 && i + 1 < bs->size) {
+            printf(" ");
+        }
+    }
+    printf("\n");
 }
 
 void destroy_biset(BitSet *bs) {

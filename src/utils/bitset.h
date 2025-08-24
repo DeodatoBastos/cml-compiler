@@ -40,19 +40,23 @@ void bitset_toggle(BitSet *bs, int pos);
 /**
  * @brief Checks if a member is in the BitSet.
  */
-bool bitset_test(BitSet *bs, int pos);
+bool bitset_test(const BitSet *bs, int pos);
 /**
  * @brief Performs the union of two BitSets (dest = dest U src).
  */
-void bitset_union(BitSet *dest, BitSet *src);
+void bitset_union(BitSet *dest, const BitSet *src);
 /**
  * @brief Performs the difference of two BitSets (dest = dest - src).
  */
-void bitset_diff(BitSet *dest, BitSet *src);
+void bitset_diff(BitSet *dest, const BitSet *src);
 /**
  * @brief Checks if two BitSets are equal.
  */
-bool bitset_equals(BitSet *bs1, BitSet *bs2);
+bool bitset_equals(const BitSet *bs1, const BitSet *bs2);
+/**
+ * @brief Prints the BitSet as binary string
+ */
+void print_bitset(const BitSet *bs1);
 /**
  * @brief Destroy a BitSet and free its memory.
  */

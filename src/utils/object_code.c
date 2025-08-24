@@ -11,7 +11,7 @@ char *get_reg(int *map, int reg_idx) {
                            "a1",   "a2", "a3", "a4", "a5",  "a6",  "a7", "s2", "s3", "s4", "s5",
                            "s6",   "s7", "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"};
 
-    if (reg_idx < 0)
+    if (reg_idx <= 0)
         return reg_names[-reg_idx];
 
     return reg_names[-temps[map[reg_idx]]];
@@ -130,40 +130,41 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
                     node->target->address - node->address);
             break;
         case JUMP_REG:
-            sprintf(curr_obj->assembly, "jalr %s, 0(%s)", get_reg(map, RA_REGISTER),
-                    get_reg(map, node->dest));
+            sprintf(curr_obj->assembly, "jalr %s, %s, 0", get_reg(map, node->dest),
+                    get_reg(map, RA_REGISTER));
             break;
         case JUMP:
-            sprintf(curr_obj->assembly, "jal %s, %d", get_reg(map, RA_REGISTER), node->imm);
+            // sprintf(curr_obj->assembly, "jalr %s, %d", get_reg(map, X0_REGISTER), node->imm);
+            sprintf(curr_obj->assembly, "j %s", node->comment);
             break;
 
         case BEQ:
-            sprintf(curr_obj->assembly, "beq %s, %s, %d", get_reg(map, node->src1),
-                    get_reg(map, node->src2), node->imm);
+            sprintf(curr_obj->assembly, "beq %s, %s, %s", get_reg(map, node->src1),
+                    get_reg(map, node->src2), node->comment);
             break;
         case BNE:
-            sprintf(curr_obj->assembly, "bne %s, %s, %d", get_reg(map, node->src1),
-                    get_reg(map, node->src2), node->imm);
+            sprintf(curr_obj->assembly, "bne %s, %s, %s", get_reg(map, node->src1),
+                    get_reg(map, node->src2), node->comment);
             break;
         case BLE:
             // sprintf(currObj->assembly, "bge %s, %s, %d", get_reg(rm, node->src2),
             //         get_reg(rm, node->src1), node->imm);
-            sprintf(curr_obj->assembly, "ble %s, %s, %d", get_reg(map, node->src1),
-                    get_reg(map, node->src2), node->imm);
+            sprintf(curr_obj->assembly, "ble %s, %s, %s", get_reg(map, node->src1),
+                    get_reg(map, node->src2), node->comment);
             break;
         case BLT:
-            sprintf(curr_obj->assembly, "blt %s, %s, %d", get_reg(map, node->src1),
-                    get_reg(map, node->src2), node->imm);
+            sprintf(curr_obj->assembly, "blt %s, %s, %s", get_reg(map, node->src1),
+                    get_reg(map, node->src2), node->comment);
             break;
         case BGE:
-            sprintf(curr_obj->assembly, "bge %s, %s, %d", get_reg(map, node->src1),
-                    get_reg(map, node->src2), node->imm);
+            sprintf(curr_obj->assembly, "bge %s, %s, %s", get_reg(map, node->src1),
+                    get_reg(map, node->src2), node->comment);
             break;
         case BGT:
             // sprintf(currObj->assembly, "blt %s, %s, %d", get_reg(rm, node->src2),
             //         get_reg(rm, node->src1), node->imm);
-            sprintf(curr_obj->assembly, "bgt %s, %s, %d", get_reg(map, node->src1),
-                    get_reg(map, node->src2), node->imm);
+            sprintf(curr_obj->assembly, "bgt %s, %s, %s", get_reg(map, node->src1),
+                    get_reg(map, node->src2), node->comment);
             break;
 
         case CALL:
