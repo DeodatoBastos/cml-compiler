@@ -74,8 +74,6 @@ const char *instruction_to_string(Instruction instr) {
         return "JUMP";
     case JUMP_REG:
         return "JUMP_REG";
-    case RELATIVE_JUMP:
-        return "REL_JUMP";
 
     case BEQ:
         return "BEQ";
@@ -193,21 +191,15 @@ void print_ir(IR *ir, FILE *out) {
                 fprintf(out, ", ");
                 print_register(out, node->src2);
                 fprintf(out, ", ");
-                // fprintf(out, "%d", node->imm);
                 fprintf(out, "%s", node->comment);
                 break;
 
             case JUMP:
-                // fprintf(out, "%d", node->imm);
                 fprintf(out, "%s", node->comment);
                 break;
 
             case JUMP_REG:
                 print_register(out, node->src1);
-                break;
-
-            case RELATIVE_JUMP:
-                fprintf(out, "%d", node->target->address);
                 break;
 
             case CALL:
@@ -491,13 +483,6 @@ void ir_insert_jump_reg(IR *ir, int src1) {
     IRNode *node = new_ir_node(JUMP_REG);
     node->src_kind = REG_SRC;
     node->src1 = src1;
-
-    ir_insert_node(ir, node);
-}
-
-void ir_insert_rel_jump(IR *ir, IRNode *target) {
-    IRNode *node = new_ir_node(RELATIVE_JUMP);
-    node->target = target;
 
     ir_insert_node(ir, node);
 }

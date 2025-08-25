@@ -43,7 +43,6 @@ typedef enum Instruction {
 
     JUMP,
     JUMP_REG,
-    RELATIVE_JUMP,
 
     BEQ,
     BNE,
@@ -146,9 +145,6 @@ IRNode *ir_insert_jump(IR *ir, char *label);
 // ra <- pc + 4;
 // pc <- rs1
 void ir_insert_jump_reg(IR *ir, int src1);
-// ra <- pc + 4;
-// pc <- addr
-void ir_insert_rel_jump(IR *ir, IRNode *target);
 
 // rs1 == rs2 => pc <- pc + imm (imm == label)
 IRNode *ir_insert_beq(IR *ir, int src1, int src2, int imm);

@@ -111,8 +111,6 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
                         get_reg(map, node->src1), get_reg(map, node->src2));
             break;
         case NOP:
-            // sprintf(currObj->assembly, "addi %s, %s, 0", getReg(rm, X0_REGISTER),
-            //         getReg(rm, X0_REGISTER));
             sprintf(curr_obj->assembly, "nop");
             break;
 
@@ -125,16 +123,11 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
             sprintf(curr_obj->assembly, "\n%s:", node->comment);
             break;
 
-        case RELATIVE_JUMP:
-            sprintf(curr_obj->assembly, "jal %s, %d", get_reg(map, RA_REGISTER),
-                    node->target->address - node->address);
-            break;
         case JUMP_REG:
             sprintf(curr_obj->assembly, "jalr %s, %s, 0", get_reg(map, node->dest),
                     get_reg(map, RA_REGISTER));
             break;
         case JUMP:
-            // sprintf(curr_obj->assembly, "jalr %s, %d", get_reg(map, X0_REGISTER), node->imm);
             sprintf(curr_obj->assembly, "j %s", node->comment);
             break;
 
