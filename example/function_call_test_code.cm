@@ -9,4 +9,5 @@ int g(int x) {
 void main (void) {
     int a; int b; int x;
     x = f(a, g(b));
+    output(x);
 }

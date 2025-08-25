@@ -10,7 +10,9 @@ void main(void)
 {
     int x;
     int y;
-    x = input();
-    y = input();
+    // x = input();
+    // y = input();
+    x = 1120;
+    y = 42;
     output(gdc(x,y));
 }

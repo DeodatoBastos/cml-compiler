@@ -24,7 +24,7 @@ IR *gen_ir(ASTNode *tree) {
     ir_insert_comment(ir, "program entry: call main");
     ir_insert_call(ir, "main");
     ir_insert_comment(ir, "syscall Exit (a7 = 10)");
-    ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 10);
+    ir_insert_addi(ir, A0_REGISTER, X0_REGISTER, 10);
     ir_insert_ecall(ir);
     gen_code(tree, ir);
 
@@ -184,7 +184,7 @@ void gen_code(ASTNode *node, IR *ir) {
 
         case Read: {
             ir_insert_comment(ir, "syscall ReadInt (a7 = 5)");
-            ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 5);
+            ir_insert_addi(ir, A0_REGISTER, X0_REGISTER, 5);
             ir_insert_ecall(ir);
 
             ASTNode *var_node = node->child[0];
@@ -232,11 +232,11 @@ void gen_code(ASTNode *node, IR *ir) {
         case Write: {
             gen_code(node->child[0], ir);
             ir_insert_comment(ir, "syscall PrintInt (a7 = 1, a0 = rs1)");
-            ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 1);
-            ir_insert_mov(ir, A0_REGISTER, node->child[0]->temp_reg);
+            ir_insert_addi(ir, A0_REGISTER, X0_REGISTER, 1);
+            ir_insert_mov(ir, A1_REGISTER, node->child[0]->temp_reg);
             ir_insert_ecall(ir);
-            ir_insert_addi(ir, A7_REGISTER, X0_REGISTER, 11);
-            ir_insert_li(ir, A0_REGISTER, 10);
+            ir_insert_addi(ir, A0_REGISTER, X0_REGISTER, 11);
+            ir_insert_li(ir, A1_REGISTER, 10);
             ir_insert_ecall(ir);
             break;
         }
@@ -377,8 +377,16 @@ void gen_code(ASTNode *node, IR *ir) {
 
         case FuncCall: {
             ASTNode *arg = node->child[0];
-            int arg_count = 0;
+            int arg_count = 0, count = 0;
             ir_insert_comment(ir, "push arguments");
+
+            while (arg != NULL) {
+                arg_count++;
+                arg = arg->sibling;
+            }
+            arg = node->child[0];
+            ir_insert_addi(ir, SP_REGISTER, SP_REGISTER, -arg_count * 4);
+
             while (arg != NULL) {
                 ASTNode *next_arg = arg->sibling; // avoid generation of args code multiple times
                 arg->sibling = NULL;
@@ -407,9 +415,8 @@ void gen_code(ASTNode *node, IR *ir) {
 
                 arg->sibling = next_arg;
 
-                ir_insert_addi(ir, SP_REGISTER, SP_REGISTER, -4);
-                ir_insert_store(ir, arg->temp_reg, 0, SP_REGISTER);
-                arg_count++;
+                ir_insert_store(ir, arg->temp_reg, count * 4, SP_REGISTER);
+                count++;
                 arg = arg->sibling;
             }
 

@@ -46,7 +46,8 @@ void main(void){
     len = 10;
 
     while(i<len){
-        x[i] = input();
+        // x[i] = input();
+        x[i] = 2 * i;
         y[i] = x[i] + 1;
         i = i + 1;
     }
