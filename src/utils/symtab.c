@@ -25,7 +25,7 @@ static BucketList *hashTable[ST_SIZE];
  * loc = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(ASTNode *node, int scope, int addr, int offset) {
+void st_insert(ASTNode *node, int scope, unsigned int addr, int offset) {
     int h = hash(node->attr.name);
     BucketList *l = hashTable[h];
     while ((l != NULL) && ((strcmp(node->attr.name, l->node->attr.name) != 0) || l->scope != scope))
@@ -135,7 +135,7 @@ void print_symtab(FILE *listing) {
                 fprintf(listing, "%-4s  ", type_str(l->node->type));
                 fprintf(listing, "%-8s  ", var_type_str(l->node->kind.expr));
                 fprintf(listing, "%-5d  ", l->scope);
-                fprintf(listing, "%-8d  ", l->address);
+                fprintf(listing, "%-8x  ", l->address);
                 fprintf(listing, "%-6s   ", l->active ? "true" : "false");
 
                 while (t != NULL) {

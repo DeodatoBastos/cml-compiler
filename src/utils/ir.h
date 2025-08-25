@@ -66,7 +66,7 @@ typedef struct IR_Node {
 
     int dest;
     int src1, src2;
-    int imm;
+    long imm;
 
     char *comment;
     int address;
@@ -97,7 +97,7 @@ void ir_insert_node(IR *ir, IRNode *node);
 // rd <- rs1
 void ir_insert_mov(IR *ir, int dest, int src1);
 // rd <- imm
-void ir_insert_li(IR *ir, int dest, int imm);
+void ir_insert_li(IR *ir, int dest, long imm);
 // rd <- imm << 12
 void ir_insert_lui(IR *ir, int dest, int imm);
 // rd <- pc + imm << 12

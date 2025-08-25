@@ -151,7 +151,7 @@ void print_ir(IR *ir, FILE *out) {
             case LUI:
             case AUIPC:
                 print_register(out, node->dest);
-                fprintf(out, ", %d", node->imm);
+                fprintf(out, ", %ld", node->imm);
                 break;
 
             case LOAD:
@@ -160,7 +160,7 @@ void print_ir(IR *ir, FILE *out) {
                     print_register(out, node->dest);
                 else
                     print_register(out, node->src2);
-                fprintf(out, ", %d(", node->imm);
+                fprintf(out, ", %ld(", node->imm);
                 print_register(out, node->src1);
                 fprintf(out, ")");
                 break;
@@ -180,7 +180,7 @@ void print_ir(IR *ir, FILE *out) {
                 if (node->src_kind == REG_SRC)
                     print_register(out, node->src2);
                 else if (node->src_kind == CONST_SRC)
-                    fprintf(out, "%d", node->imm);
+                    fprintf(out, "%ld", node->imm);
                 break;
 
             case BEQ:
@@ -288,7 +288,7 @@ void ir_insert_mov(IR *ir, int dest, int src1) {
     ir_insert_node(ir, node);
 }
 
-void ir_insert_li(IR *ir, int dest, int imm) {
+void ir_insert_li(IR *ir, int dest, long imm) {
     IRNode *node = new_ir_node(LI);
     node->dest = dest;
     node->src_kind = CONST_SRC;

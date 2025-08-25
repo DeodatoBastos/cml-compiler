@@ -45,26 +45,26 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
                     get_reg(map, node->src1));
             break;
         case LI:
-            sprintf(curr_obj->assembly, "li %s, %d", get_reg(map, node->dest), node->imm);
+            sprintf(curr_obj->assembly, "li %s, 0x%lx", get_reg(map, node->dest), node->imm);
             break;
         case LUI:
-            sprintf(curr_obj->assembly, "lui %s, %d", get_reg(map, node->dest), node->imm);
+            sprintf(curr_obj->assembly, "lui %s, %ld", get_reg(map, node->dest), node->imm);
             break;
         case AUIPC:
-            sprintf(curr_obj->assembly, "auipc %s, %d", get_reg(map, node->dest), node->imm);
+            sprintf(curr_obj->assembly, "auipc %s, %ld", get_reg(map, node->dest), node->imm);
             break;
         case LOAD:
-            sprintf(curr_obj->assembly, "lw %s, %d(%s)", get_reg(map, node->dest), node->imm,
+            sprintf(curr_obj->assembly, "lw %s, %ld(%s)", get_reg(map, node->dest), node->imm,
                     get_reg(map, node->src1));
             break;
         case STORE:
-            sprintf(curr_obj->assembly, "sw %s, %d(%s)", get_reg(map, node->src2), node->imm,
+            sprintf(curr_obj->assembly, "sw %s, %ld(%s)", get_reg(map, node->src2), node->imm,
                     get_reg(map, node->src1));
             break;
 
         case ADD:
             if (node->src_kind == CONST_SRC)
-                sprintf(curr_obj->assembly, "addi %s, %s, %d", get_reg(map, node->dest),
+                sprintf(curr_obj->assembly, "addi %s, %s, %ld", get_reg(map, node->dest),
                         get_reg(map, node->src1), node->imm);
             else
                 sprintf(curr_obj->assembly, "add %s, %s, %s", get_reg(map, node->dest),
@@ -88,7 +88,7 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
             break;
         case SLL:
             if (node->src_kind == CONST_SRC)
-                sprintf(curr_obj->assembly, "slli %s, %s, %d", get_reg(map, node->dest),
+                sprintf(curr_obj->assembly, "slli %s, %s, %ld", get_reg(map, node->dest),
                         get_reg(map, node->src1), node->imm);
             else
                 sprintf(curr_obj->assembly, "sll %s, %s, %s", get_reg(map, node->dest),
@@ -96,7 +96,7 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
             break;
         case SRL:
             if (node->src_kind == CONST_SRC)
-                sprintf(curr_obj->assembly, "srli %s, %s, %d", get_reg(map, node->dest),
+                sprintf(curr_obj->assembly, "srli %s, %s, %ld", get_reg(map, node->dest),
                         get_reg(map, node->src1), node->imm);
             else
                 sprintf(curr_obj->assembly, "srl %s, %s, %s", get_reg(map, node->dest),
@@ -104,7 +104,7 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
             break;
         case SRA:
             if (node->src_kind == CONST_SRC)
-                sprintf(curr_obj->assembly, "srai %s, %s, %d", get_reg(map, node->dest),
+                sprintf(curr_obj->assembly, "srai %s, %s, %ld", get_reg(map, node->dest),
                         get_reg(map, node->src1), node->imm);
             else
                 sprintf(curr_obj->assembly, "sra %s, %s, %s", get_reg(map, node->dest),

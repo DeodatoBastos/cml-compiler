@@ -32,7 +32,7 @@ typedef struct BucketListRec {
     int scope;
     bool active;
     int offset;  /* stack offset */
-    int address; /* memory location for global variable */
+    unsigned int address; /* memory location for global variable */
     struct BucketListRec *next;
 } BucketList;
 
@@ -41,7 +41,7 @@ typedef struct BucketListRec {
  * addr = memory location is inserted only the
  * first time, otherwise ignored
  */
-void st_insert(ASTNode *node, int scope, int addr, int offset);
+void st_insert(ASTNode *node, int scope, unsigned int addr, int offset);
 
 /* Function st_activate activate the given
  * variable

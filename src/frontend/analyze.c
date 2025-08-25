@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 /* counter for global variable memory locations */
-static int global_address = 0;
+static unsigned int global_address = 0x10008000;
 
 /* counters for stack frame offsets */
 static int param_offset = 0;
@@ -94,7 +94,7 @@ static void insert_node(ASTNode *n) {
                     global_address += size * 4;
                 } else {
                     local_offset -= 4 * size;
-                    st_insert(n, n->scope, -1, local_offset);
+                    st_insert(n, n->scope, 0, local_offset);
                 }
             } else if (bucket->node->kind.expr == FuncDecl) {
                 /* function defined with the same name raise an error */
@@ -102,7 +102,7 @@ static void insert_node(ASTNode *n) {
                           "has the name of a function already declared", s_top(stack));
             } else if (bucket->scope != s_top(stack)) { // new scope
                 local_offset -= 4 * size;
-                st_insert(n, n->scope, -1, local_offset);
+                st_insert(n, n->scope, 0, local_offset);
             } else { // already in table raise an error
                 var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
             }
@@ -112,7 +112,7 @@ static void insert_node(ASTNode *n) {
             local_offset = 0;
             n->scope = s_top(stack);
             if (st_lookup(n->attr.name, s_top(stack)) == NULL) {
-                st_insert(n, n->scope, -1, 0);
+                st_insert(n, n->scope, 0, 0);
             } else { // already in table raise an error
                 var_error(n, var_type_str(n->kind.expr), "redefined", s_top(stack));
             }
@@ -121,7 +121,7 @@ static void insert_node(ASTNode *n) {
         case ParamArr:
             // parameters are defined before entering a new scope
             n->scope = scope + 1;
-            st_insert(n, scope + 1, -1, param_offset);
+            st_insert(n, scope + 1, 0, param_offset);
             param_offset += 4;
             break;
         case Var:
@@ -138,7 +138,7 @@ static void insert_node(ASTNode *n) {
                  add line number of use only */
                 n->scope = bucket->scope;
                 n->type = bucket->node->type;
-                st_insert(n, bucket->scope, -1, 0);
+                st_insert(n, bucket->scope, 0, 0);
                 if ((bucket->node->kind.expr == ArrDecl) || (bucket->node->kind.expr == ParamArr))
                     n->kind.expr = Arr;
             }
