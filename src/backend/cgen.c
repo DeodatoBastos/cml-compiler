@@ -15,7 +15,7 @@ static IRNode *gen_condition(ASTNode *node, IR *ir);
  * @brief A global pointer to the end label of the current function being generated.
  * This is used by 'return' statements to know where the function's epilogue is.
  */
-static ASTNode* func;
+static ASTNode *func;
 // static IRNode *func_end = NULL;
 
 IR *gen_ir(ASTNode *tree) {
@@ -363,8 +363,8 @@ void gen_code(ASTNode *node, IR *ir) {
 
             // restore registers
             ir_insert_mov(ir, SP_REGISTER, FP_REGISTER);
-            ir_insert_store(ir, RA_REGISTER, 4, SP_REGISTER);
-            ir_insert_store(ir, FP_REGISTER, 0, SP_REGISTER);
+            ir_insert_load(ir, RA_REGISTER, 4, SP_REGISTER);
+            ir_insert_load(ir, FP_REGISTER, 0, SP_REGISTER);
             ir_insert_addi(ir, SP_REGISTER, SP_REGISTER, 8);
 
             // return to caller
@@ -385,7 +385,8 @@ void gen_code(ASTNode *node, IR *ir) {
                 arg = arg->sibling;
             }
             arg = node->child[0];
-            ir_insert_addi(ir, SP_REGISTER, SP_REGISTER, -arg_count * 4);
+            if (arg_count > 0)
+                ir_insert_addi(ir, SP_REGISTER, SP_REGISTER, -arg_count * 4);
 
             while (arg != NULL) {
                 ASTNode *next_arg = arg->sibling; // avoid generation of args code multiple times
