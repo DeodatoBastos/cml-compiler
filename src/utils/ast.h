@@ -19,6 +19,7 @@ typedef enum {
     FuncDecl,
     FuncCall
 } ExprKind;
+/* ExpType is used for type checking */
 typedef enum { Void, Integer, Boolean } ExprType;
 
 typedef struct ASTNode {
@@ -27,7 +28,7 @@ typedef struct ASTNode {
     int temp_reg;
 
     NodeKind node_kind;
-    ExprType type;
+    ExprType type; /* for type checking of exps */
     union {
         StmtKind stmt;
         ExprKind expr;

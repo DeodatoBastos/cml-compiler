@@ -12,8 +12,8 @@ static int calculate_local_size(ASTNode *node);
 static IRNode *gen_condition(ASTNode *node, IR *ir);
 
 /**
- * @brief A global pointer to the end label of the current function being generated.
- * This is used by 'return' statements to know where the function's epilogue is.
+ * @brief A global pointer to the function node being generated.
+ * This is used by 'return' statements to know the name of the function name label.
  */
 static ASTNode *func;
 
@@ -31,12 +31,10 @@ IR *gen_ir(ASTNode *tree) {
 }
 
 /**
- * @brief Main entry point for the code generation phase.
- * It initializes the IR, creates a program header to call 'main' and then exit,
- * and then starts the recursive traversal of the AST.
+ * @brief Recursively traverses the AST to generate IR code for each node.
  *
- * @param tree The root of the AST.
- * @return A pointer to the generated IR.
+ * @param node The current AST node to process.
+ * @param ir The IR structure to append new instructions to.
  */
 void gen_code(ASTNode *node, IR *ir) {
     if (node == NULL)
@@ -448,10 +446,11 @@ void gen_code(ASTNode *node, IR *ir) {
 }
 
 /**
- * @brief Recursively traverses the AST to generate IR code for each node.
+ * @brief Recursively calculates the total size needed for all local variable
+ * declarations within a function's body, including nested blocks.
  *
- * @param node The current AST node to process.
- * @param ir The IR structure to append new instructions to.
+ * @param node The AST node to start the traversal from (usually a Compound Stmt).
+ * @return The total size in bytes.
  */
 static int calculate_local_size(ASTNode *node) {
     if (node == NULL)

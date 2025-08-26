@@ -88,7 +88,7 @@ bool get_return_nodes(ASTNode *node, Queue *q) {
     return has_return;
 }
 
-void print_indent(int depth) {
+static void print_indent(int depth) {
     for (int i = 0; i < depth; i++) {
         fprintf(listing, "  ");
     }
@@ -357,17 +357,4 @@ void replace_ext(char *dest, const char *src, const char *new_ext) {
     }
 
     strcat(dest, new_ext);
-}
-
-int get_size(ExprType type) {
-    switch (type) {
-    case Void:
-        return 0;
-    case Integer:
-        return 4;
-    case Boolean:
-        return 0;
-    default:
-        return 0;
-    }
 }

@@ -31,7 +31,7 @@ typedef struct BucketListRec {
     ASTNode *node;
     int scope;
     bool active;
-    int offset;  /* stack offset */
+    int offset;           /* stack offset */
     unsigned int address; /* memory location for global variable */
     struct BucketListRec *next;
 } BucketList;
@@ -64,17 +64,25 @@ BucketList *st_lookup_soft(char *name);
  */
 void st_delete(char *name, int scope);
 
-/* Function free_sym_tab delete all
+/* Function free_symtab delete all
  * entries in the symbol table
  */
 void free_symtab();
 
-/* Procedure printSymTab prints a formatted
+/* Procedure print symtab prints a formatted
  * list of the symbol table contents
  */
 void print_symtab(FILE *listing);
 
+/* Function free_bucket_list deletes
+ * an BucketList element and all its
+ * LineList elements
+ */
 void free_bucket_list(BucketList *l);
+
+/* Function free_line_list deletes
+ * an LineList element
+ * */
 void free_line_list(LineList *l);
 
 #endif

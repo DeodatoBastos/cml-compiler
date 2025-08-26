@@ -31,8 +31,6 @@ void st_insert(ASTNode *node, int scope, unsigned int addr, int offset) {
     while ((l != NULL) && ((strcmp(node->attr.name, l->node->attr.name) != 0) || l->scope != scope))
         l = l->next;
 
-    // printf("adding %s with scope %d\n", node->attr.name, scope);
-
     if (l == NULL) { /* variable not yet in table */
         l = (BucketList *)malloc(sizeof(BucketList));
 
@@ -110,15 +108,13 @@ void st_delete(char *name, int scope) {
         l = l->next;
 
     if (l == NULL) {
-        // fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
         return;
     }
-    // fprintf(listing, "Deleting '%s' in scope '%d'\n", name, scope);
 
     l->active = false;
 }
 
-/* Procedure printSymTab prints a formatted
+/* Procedure print_symtab prints a formatted
  * list of the symbol table contents
  */
 void print_symtab(FILE *listing) {

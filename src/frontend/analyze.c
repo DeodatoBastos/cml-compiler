@@ -24,11 +24,17 @@ static int last_scope;
 /* stack to store scopes */
 Stack *stack;
 
+/* Procedure type_error display an error message
+ * regarding errors during type check
+ */
 static void type_error(ASTNode *n, char *message) {
     fprintf(listing, "\033[1;31mType Error\033[0m at line %d: %s\n", n->lineno, message);
     Error = true;
 }
 
+/* Procedure type_error display an error message
+ * regarding errors during the build of the symtab
+ */
 static void var_error(ASTNode *n, const char *var_type, char *msg, int scope) {
     fprintf(listing, "\033[1;31mVar Error\033[0m: %s '%s' %s at line %d and scope %d\n", var_type,
             n->attr.name, msg, n->lineno, scope);
@@ -285,7 +291,7 @@ static void check_node(ASTNode *n) {
                 bool has_return = get_return_nodes(
                     n->child[1]->child[1],
                     q); // func_decl -> (params, compound) -> (local_decl, stmt_list)
-                if (q_isEmpty(q)) {
+                if (q_empty(q)) {
                     asprintf(&msg, "return stmt not found for the integer function '%s'",
                              n->attr.name);
                     type_error(n, msg);
@@ -299,7 +305,7 @@ static void check_node(ASTNode *n) {
                     type_error(n, msg);
                     free(msg);
                 }
-                while (!q_isEmpty(q)) {
+                while (!q_empty(q)) {
                     node = q_front(q);
                     if (n->type != node->type) {
                         asprintf(&msg, "return type of function '%s' must be integer",

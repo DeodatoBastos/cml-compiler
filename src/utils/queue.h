@@ -17,6 +17,8 @@ void *q_front(const Queue *queue);
 
 void *q_back(const Queue *queue);
 
-bool q_isEmpty(const Queue *queue);
+bool q_empty(const Queue *queue);
+
+int q_size(const Queue *queue);
 
 #endif // QUEUE_H

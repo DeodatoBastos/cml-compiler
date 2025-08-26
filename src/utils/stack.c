@@ -31,7 +31,7 @@ void s_destroy(Stack *stack) {
     free(stack);
 }
 
-bool s_isEmpty(const Stack *stack) { return stack->size == 0; }
+bool s_empty(const Stack *stack) { return stack->size == 0; }
 
 int s_top(const Stack *stack) { return stack->top->element; }
 
@@ -57,19 +57,19 @@ void s_pop(Stack *stack) {
     free(auxNode);
 }
 
-void s_printTopDown(Stack *stack) {
+void s_print_top_down(Stack *stack) {
     printf("Stack (%d): ", stack->size);
     Stack *auxStack;
     auxStack = s_create();
 
-    while (!s_isEmpty(stack)) {
+    while (!s_empty(stack)) {
         s_push(auxStack, s_top(stack));
         printf("%d ", s_top(stack));
         s_pop(stack);
     }
 
     printf("\n");
-    while (!s_isEmpty(auxStack)) {
+    while (!s_empty(auxStack)) {
         s_push(stack, s_top(auxStack));
         s_pop(auxStack);
     }
