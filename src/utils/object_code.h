@@ -5,6 +5,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+# define UPPER_LIMIT (1 << 11) - 1
+# define LOWER_LIMIT -(1 << 11)
+
 /**
  * @struct ObjectCode
  * @brief Represents a single assembly instruction in a linked list

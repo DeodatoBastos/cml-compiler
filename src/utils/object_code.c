@@ -41,10 +41,31 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
 
         switch (node->instruction) {
         case MOV:
+            // sprintf(curr_obj->assembly, "addi %s, %s, 0", get_reg(map, node->dest),
+            //         get_reg(map, node->src1));
             sprintf(curr_obj->assembly, "mv %s, %s", get_reg(map, node->dest),
                     get_reg(map, node->src1));
             break;
         case LI:
+            // if (node->imm >= LOWER_LIMIT && node->imm <= UPPER_LIMIT) {
+            //     sprintf(curr_obj->assembly, "addi %s, %s, %d", get_reg(map, node->dest),
+            //             get_reg(map, X0_REGISTER), (int)node->imm);
+            // }
+
+            // int lower = node->imm & 0xFFF;
+            // int upper = node->imm >> 12;
+
+            // if (lower & 0x800) {
+            //     upper += 1;
+            //     lower = lower - 4096;
+            // }
+            // sprintf(curr_obj->assembly, "lui %s, %x", get_reg(map, node->dest), upper & 0xFFFFF);
+
+            // if (lower != 0) {
+            //     sprintf(curr_obj->assembly, "addi %s, %s, %d", get_reg(map, node->dest),
+            //             get_reg(map, node->dest), lower);
+            // }
+
             sprintf(curr_obj->assembly, "li %s, 0x%lx", get_reg(map, node->dest), node->imm);
             break;
         case LUI:
@@ -111,6 +132,8 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
                         get_reg(map, node->src1), get_reg(map, node->src2));
             break;
         case NOP:
+            // sprintf(curr_obj->assembly, "addi %s, %s, 0", get_reg(map, X0_REGISTER),
+            //         get_reg(map, X0_REGISTER));
             sprintf(curr_obj->assembly, "nop");
             break;
 
@@ -125,9 +148,10 @@ ObjectCode *ir_to_obj_code(IR *ir, int *map, bool include_comments) {
 
         case JUMP_REG:
             sprintf(curr_obj->assembly, "jalr %s, %s, 0", get_reg(map, node->dest),
-                    get_reg(map, RA_REGISTER));
+                    get_reg(map, node->src1));
             break;
         case JUMP:
+            // sprintf(curr_obj->assembly, "jal %s %s", get_reg(map, X0_REGISTER), node->comment);
             sprintf(curr_obj->assembly, "j %s", node->comment);
             break;
 

@@ -76,7 +76,6 @@ BucketList *st_lookup(char *name, int scope) {
         l = l->next;
 
     if (l == NULL) {
-        // fprintf(listing, "Entry '%s' not found in scope '%d'\n", name, scope);
         return NULL;
     } else
         return l;

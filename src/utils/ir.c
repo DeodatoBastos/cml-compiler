@@ -242,7 +242,6 @@ IRNode *new_ir_node(Instruction instruction) {
     node->next = NULL;
     node->prev = NULL;
     node->target = NULL;
-    node->var_src = NULL;
     node->live_in = NULL;
     node->live_out = NULL;
     node->instruction = instruction;
@@ -555,7 +554,7 @@ IRNode *ir_insert_bgt(IR *ir, int src1, int src2, int imm) {
 
 void ir_insert_call(IR *ir, char *label) {
     IRNode *node = new_ir_node(CALL);
-    node->src_kind = VAR_SRC;
+    node->src_kind = CONST_SRC;
     node->comment = strdup(label);
 
     ir_insert_node(ir, node);

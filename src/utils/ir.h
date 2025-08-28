@@ -26,7 +26,7 @@
  * @enum SourceKind
  * @brief Specifies the type of source operand in an instruction
  */
-typedef enum SourceKind { CONST_SRC, REG_SRC, VAR_SRC } SourceKind;
+typedef enum SourceKind { CONST_SRC, REG_SRC } SourceKind;
 
 /**
  * @enum Instruction
@@ -80,7 +80,6 @@ typedef struct IRNode {
     struct IRNode *next, *prev;
     struct IRNode *target;
 
-    BucketList *var_src;
     Instruction instruction;
     SourceKind src_kind;
 
