@@ -3,10 +3,15 @@ void main (void) {
    if (a == b) x = 0;
    else x = 1;
 
+   output(x);
+
    if (a < b) {
       a = b + 1;
       b = b + (3 * 5) / 2;
    }
+
+   output(a);
+   output(b);
 
    if (a > b) {
       a = 8;
@@ -15,9 +20,16 @@ void main (void) {
       a = b * (5 / 3) + 7;
    }
 
+   output(a);
+   output(b);
+
    while (i <= 10) {
       b = i * 2;
       a = b + 4;
       i = i + 1;
    }
+
+   output(a);
+   output(b);
+   output(i);
 }

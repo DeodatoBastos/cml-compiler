@@ -8,6 +8,8 @@ int g(int x) {
 
 void main (void) {
     int a; int b; int x;
+    a = 2;
+    b = 2;
     x = f(a, g(b));
     output(x);
 }
