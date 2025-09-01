@@ -68,6 +68,10 @@ make clean
 # Compile with parse tree visualization
 ./cml.out --tp example/program.cm
 ```
+
+### Running assembly
+The generated assembly as based on the [RARS](https://github.com/TheThirdOne/rars?tab=readme-ov-file) simulator
+
 ## Development Tools
 
 ### Running Examples
